@@ -9,29 +9,35 @@ The core of this project is a C++ library that can be used in a ROS node.
 ```sh
 mkdir build && cd build
 cmake .. -G "Ninja Multi-Config"
-cmake --build . --config Release
-ctest -VV --config Release
+cmake --build . --config [Release | Debug | RelWithDebInfo]
+ctest -VV -C [Release | Debug | RelWithDebInfo]
 ```
 
-### User build
-
 ### Package deployment
+```sh
+conan create . codejam22/latest -b missing
+```
 
 ## References
-
 ### CMake
-
+* https://cmake.org/cmake/help/latest/index.html
+* https://cmake.org/cmake/help/latest/manual/ctest.1.html
+* https://github.com/onqtam/awesome-cmake
 ### Conan
-https://github.com/conan-io/cmake-conan
+* https://github.com/conan-io/cmake-conan
+* https://docs.conan.io/en/latest/cheatsheet.html
+* https://docs.conan.io/en/latest/reference/conanfile.html
+* https://docs.conan.io/en/latest/reference/build_helpers/cmake.html
 
 ### Docker
-https://github.com/deluan/zsh-in-docker
+* https://code.visualstudio.com/docs/remote/containers
+* https://github.com/deluan/zsh-in-docker
 
 ### Libs
-https://github.com/gabime/spdlog
-https://github.com/docopt/docopt.cpp
-https://github.com/catchorg/Catch2
-https://github.com/eranpeer/FakeIt
+* https://github.com/gabime/spdlog
+* https://github.com/docopt/docopt.cpp
+* https://github.com/catchorg/Catch2
+* https://github.com/eranpeer/FakeIt
 
 ## TODO
 

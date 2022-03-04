@@ -125,8 +125,4 @@ ENV CXX=${CXX:-"g++"}
 # To check that the shell was indeed added: `chsh -l` and you should see it in the  list.
 RUN chsh -s /usr/bin/zsh
 
-# Include project
-#ADD . /workspaces/cpp_starter_project
-#WORKDIR /workspaces/cpp_starter_project
-
 CMD ["/bin/zsh"]
