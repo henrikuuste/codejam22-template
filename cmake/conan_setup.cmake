@@ -9,22 +9,24 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-conan_cmake_configure(
-  REQUIRES
-  catch2/2.13.8
-  spdlog/1.9.2
-  GENERATORS
-  cmake_find_package
-  OPTIONS
-  catch2:with_main=True)
+if(${PROJECT_SOURCE_DIR}/cmake/conan_setup.cmake IS_NEWER_THAN ${PROJECT_BINARY_DIR}/conaninfo.txt)
+  conan_cmake_configure(
+    REQUIRES
+    catch2/2.13.8
+    spdlog/1.9.2
+    GENERATORS
+    cmake_find_package
+    OPTIONS
+    catch2:with_main=True)
 
-foreach(TYPE ${CMAKE_CONFIGURATION_TYPES})
-  conan_cmake_autodetect(conan_settings BUILD_TYPE ${TYPE})
-  conan_cmake_install(
-    PATH_OR_REFERENCE
-    .
-    BUILD
-    missing
-    SETTINGS
-    ${conan_settings})
-endforeach()
+  foreach(TYPE ${CMAKE_CONFIGURATION_TYPES})
+    conan_cmake_autodetect(conan_settings BUILD_TYPE ${TYPE})
+    conan_cmake_install(
+      PATH_OR_REFERENCE
+      .
+      BUILD
+      missing
+      SETTINGS
+      ${conan_settings})
+  endforeach()
+endif()
