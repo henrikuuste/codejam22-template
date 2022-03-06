@@ -43,15 +43,16 @@ conan create . codejam22/latest -b missing
 
 ### Build system setup
 - [x] Docker development container
-- [ ] Library for core features
-- [ ] Unit tests for library
-- [ ] Basic demo app for development
+- [x] Library for core features
+- [x] Unit tests for library
+- [x] Basic demo app for development
 - [ ] Deploy to package management
   - Integrate with ROS node later
 - [ ] Static analysis
 - [ ] Version management
 - [ ] Compiler and OS agnostic
 - [ ] Separate development and user builds
+- [ ] Documentation
 
 ### ROS setup
 - [ ] Package and node
