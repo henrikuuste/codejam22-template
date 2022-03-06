@@ -2,6 +2,7 @@
 build/
 out/
 cmake-build-*/
+.conan
 
 # IDE files
 .vs/

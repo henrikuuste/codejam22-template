@@ -31,6 +31,7 @@ conan create . codejam22/latest -b missing
 
 ### Docker
 * https://code.visualstudio.com/docs/remote/containers
+* https://code.visualstudio.com/docs/remote/devcontainerjson-reference
 * https://github.com/deluan/zsh-in-docker
 
 ### Libs
