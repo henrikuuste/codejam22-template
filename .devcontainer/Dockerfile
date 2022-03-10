@@ -130,6 +130,11 @@ ENV CXX=${USE_CLANG:+"clang++"}
 ENV CC=${CC:-"gcc"}
 ENV CXX=${CXX:-"g++"}
 
+# Some basic conan setup.
+# NOTE currently does not work because of the external mount :(
+#RUN conan profile new default --detect
+#RUN conan profile update settings.compiler.libcxx=libstdc++11 default
+
 # Make ZSH the default shell for the current user in the container
 # To check that the shell was indeed added: `chsh -l` and you should see it in the  list.
 RUN chsh -s /usr/bin/zsh

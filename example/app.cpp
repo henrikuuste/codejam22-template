@@ -4,13 +4,22 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/stopwatch.h>
 
-int main() {
+int test(int val) {
+  int i = 0x7fffffff;
+  i += val;
+  return i;
+}
+
+int main(int argc, const char **argv) {
   spdlog::stopwatch sw;
   std::cout << "======================\n";
   std::cout << "\033[0;33mTest application " << codejam22::app::project_version << "\033[0m\n";
   std::cout << "======================\n";
   pathplanning::plan();
+  spdlog::warn("Testing {}", test(2));
   std::cout << "======================\n";
   spdlog::warn("Done {}", sw);
-  return 0;
+
+  int stack_array[100];
+  return stack_array[100 + argc];
 }

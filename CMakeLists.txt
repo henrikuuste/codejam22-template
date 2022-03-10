@@ -3,13 +3,12 @@ project(codejam22-dev LANGUAGES CXX)
 
 enable_testing()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(conan_setup)
-
+set(ENABLE_DEVELOPER_MODE
+    TRUE
+    CACHE BOOL "Enable developer mode (sanitizers, clang-tidy etc)")
 include(project_options)
+include(conan_setup)
 
 add_subdirectory(lib)
 add_subdirectory(example)

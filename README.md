@@ -54,13 +54,13 @@ conan create . codejam22/latest -b missing
 - [x] Library for core features
 - [x] Unit tests for library
 - [x] Basic demo app for development
-- [ ] Deploy to package management
+- [x] Deploy to package management
   - Integrate with ROS node later
-- [ ] Static analysis
+- [x] Static analysis
 - [ ] Version management
-- [ ] Compiler and OS agnostic
-- [ ] Separate development and user builds
-- [ ] Documentation
+- [x] Compiler and OS agnostic
+- [x] Separate development and user builds
+- [x] Documentation
 
 ### ROS setup
 - [ ] Package and node
