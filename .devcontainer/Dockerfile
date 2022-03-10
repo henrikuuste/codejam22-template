@@ -108,6 +108,14 @@ RUN apt-get autoremove -y && apt-get clean && \
 
 # ZSH
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.2/zsh-in-docker.sh)" -- \
+    -t  https://github.com/romkatv/powerlevel10k \
+    -a 'POWERLEVEL9K_SHORTEN_STRATEGY="truncate_beginning"' \
+    -a 'POWERLEVEL9K_SHORTEN_DIR_LENGTH=3' \
+    -a 'POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(dir vcs)' \
+    -a 'POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status)' \
+    -a 'POWERLEVEL9K_STATUS_CROSS=false' \
+    -a 'POWERLEVEL9K_PROMPT_ON_NEWLINE=true' \
+    -a 'POWERLEVEL9K_PROMPT_ADD_NEWLINE=true' \
     -p git \
     -p https://github.com/zsh-users/zsh-autosuggestions \
     -p https://github.com/zsh-users/zsh-completions \
