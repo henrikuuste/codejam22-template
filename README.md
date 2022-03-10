@@ -1,4 +1,9 @@
 # CodeJam22 project
+> In theory, theory and practice are the same.
+> In practice, they are not.
+>
+> -- <cite>Falsely attributed to many people :)</cite>
+
 Project template for CodeJam22 applications.
 
 The core of this project is a C++ library that can be used in a ROS node.
@@ -23,6 +28,8 @@ conan create . codejam22/latest -b missing
 * https://cmake.org/cmake/help/latest/index.html
 * https://cmake.org/cmake/help/latest/manual/ctest.1.html
 * https://github.com/onqtam/awesome-cmake
+* https://github.com/cpp-best-practices/project_options
+
 ### Conan
 * https://github.com/conan-io/cmake-conan
 * https://docs.conan.io/en/latest/cheatsheet.html
@@ -64,6 +71,13 @@ conan create . codejam22/latest -b missing
 
 ### Path planner interface
 - [ ] Core planner interface
+  - [ ] Return a path
 - [ ] Environment data (aka map) interface
+  - [ ] Read from external file(s)
+  - [ ] Tile based
+- [ ] Composability
+  - [ ] Planning
+  - [ ] Cost
+  - [ ] Environment layers
 
 ### Test cases
