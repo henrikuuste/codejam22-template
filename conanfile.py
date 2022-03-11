@@ -1,24 +1,67 @@
 from importlib.metadata import requires
 from conans import ConanFile, CMake
+from conans.tools import load
+import re
 
+def get_version():
+    try:
+        content = load("lib/CMakeLists.txt")
+        version = re.search("pathplanning(?:\s+)VERSION (.*)(?:\s+)LANGUAGES", content).group(1)
+        return version.strip()
+    except Exception as e:
+        print(e)
+        return None
+
+def get_license():
+    try:
+        content = load("LICENSE")
+        license = re.search(r"^(.*)$", content, re.MULTILINE).group(1)
+        return license.strip()
+    except Exception as e:
+        print(e)
+        return ""
+    
+def get_required():
+  try:
+    content = load("cmake/conan_setup.cmake")
+    libs = re.search(r"\(LIB_DEPS\s*([^\)]*)", content, re.DOTALL).group(1)
+    if not libs:
+      return []
+    # TODO remove comments?
+    libs = re.compile(r"\s+").split(libs)
+    return libs
+  except Exception as e:
+      print(e)
+      return []
+
+def get_build_required():
+  try:
+    content = load("cmake/conan_setup.cmake")
+    libs = re.search(r"\(LIB_BUILD_DEPS\s*([^\)]*)", content, re.DOTALL).group(1)
+    if not libs:
+      return []
+    # TODO remove comments?
+    libs = re.compile(r"\s+").split(libs)
+    return libs
+  except Exception as e:
+      print(e)
+      return []
 
 class PathplanningConan(ConanFile):
     name = "pathplanning"
-    version = "0.1.0"
-    license = "MIT"
-    author = "Henri Kuuste"
-    url = "<Package recipe repository url here, for issues about the package>"
-    description = "<Description of Pathplanning here>"
+    version = get_version()
+    license = get_license()
+    author = "Henri Kuuste <henri.kuuste@gmail.com>"
+    url = "https://github.com/henrikuuste/codejam22-template"
+    description = "Template project for CodeJam22 pathplanning library"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
+    options = {"shared": [True, False]}
+    default_options = {"shared": False}
     generators = ("cmake", "cmake_find_package_multi")
-    exports_sources = ["lib/*", "docs/*", "cmake/*"]
-    requires = ( "spdlog/1.9.2" )
-
-    def config_options(self):
-        if self.settings.os == "Windows":
-            del self.options.fPIC
+    exports = ["LICENSE", "cmake/*", "lib/CMakeLists.txt"]
+    exports_sources = ["lib/*", "docs/*", "cmake/*", "LICENSE"]
+    requires = get_required()
+    build_requires = get_build_required()
 
     def configure_cmake(self):
         cmake = CMake(self)

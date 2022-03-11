@@ -9,12 +9,17 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
+set(LIB_DEPS spdlog/1.9.2)
+set(LIB_BUILD_DEPS)
+
 if((NOT EXISTS ${PROJECT_BINARY_DIR}/conaninfo.txt) OR (${PROJECT_SOURCE_DIR}/cmake/conan_setup.cmake IS_NEWER_THAN
                                                         ${PROJECT_BINARY_DIR}/conaninfo.txt))
   conan_cmake_configure(
     REQUIRES
+    ${LIB_DEPS}
     catch2/2.13.8
-    spdlog/1.9.2
+    BUILD_REQUIRES
+    ${LIB_BUILD_DEPS}
     GENERATORS
     cmake_find_package_multi
     OPTIONS
