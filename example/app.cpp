@@ -7,7 +7,6 @@
 int test(int val) {
   int i = 0x7fffffff;
   i += val;
-  return i;
 }
 
 int main(int argc, const char **argv) {
@@ -15,6 +14,7 @@ int main(int argc, const char **argv) {
   std::cout << "======================\n";
   std::cout << "\033[0;33mTest application " << codejam22::app::project_version << "\033[0m\n";
   std::cout << "======================\n";
+  spdlog::info("Planning library version {}", pathplanning::version());
   pathplanning::plan();
   spdlog::warn("Testing {}", test(2));
   std::cout << "======================\n";

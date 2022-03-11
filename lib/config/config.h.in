@@ -1,0 +1,5 @@
+#pragma once
+
+namespace codejam22::lib {
+static constexpr auto project_version = "@PROJECT_VERSION@";
+}

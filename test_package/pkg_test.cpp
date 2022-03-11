@@ -1,3 +1,7 @@
 #include <pathplanning/pathplanning.h>
+#include <spdlog/spdlog.h>
 
-int main() { pathplanning::plan(); }
+int main() {
+  spdlog::info("Library version {}", pathplanning::version());
+  pathplanning::plan();
+}
