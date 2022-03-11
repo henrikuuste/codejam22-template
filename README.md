@@ -18,9 +18,13 @@ cmake --build . --config [Release | Debug | RelWithDebInfo]
 ctest -VV -C [Release | Debug | RelWithDebInfo]
 ```
 
+See `OPT_*` flags in the CMake cache for developer build options.
+
+Note that `OPT_ENABLE_CONAN` should not be used, since we use Conan by default using the `conan_setup.cmake` script. Library dependencies are also managed through this file.
+
 ### Package deployment
 ```sh
-conan create . codejam22/latest -b missing
+conan create . codejam22/latest -b missing [-o pathplanning:shared=True]
 ```
 
 ## References
@@ -57,7 +61,7 @@ conan create . codejam22/latest -b missing
 - [x] Deploy to package management
   - Integrate with ROS node later
 - [x] Static analysis
-- [ ] Version management
+- [x] Version management
 - [x] Compiler and OS agnostic
 - [x] Separate development and user builds
 - [x] Documentation
