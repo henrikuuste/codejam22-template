@@ -1,0 +1,35 @@
+- Inputs description
+  - Map - including information who are neighbors, what is distance cost of moving from one neighbor to another and what is occupancy cost (free area cost, occupied area cost, typical cost area being between free and occupied cost and optionally unknown area cost should be defined) on each neighbor. Unknown area could be used to solve exploration problem differently from normal search or just set it to half the cost for example..
+    - potentially grid map where neighbors are cells next to each other, occupancy cost is cell value and distance cost would be euclidean distance between cells.
+    - potentially graph where edges represent connections between neighbors (vertexes being a location where to move), edge including distance cost between neighbors and vertexes including occupancy cost. Another solution would be to include occupancy cost from one vertex to another in the edge cost and calculate distance cost based on vertex coordinates, which should be set in that case..
+  - Starting location - location on the map where search should start. (Could handle if coordinates are out of the map -> increase it with unknown area or fail search..)
+  - Goal location - location on the map where we would like to find the "best/optimal/shortest" path from the starting location.
+  - Distance cost amplifier - Positive nonzero value which will increase distance cost if being bigger than 1 and decreases if between 0 and 1. Used to find good balance between distance cost and occupancy cost.
+  - Max search time - stops search algorithm when search time exceeded given. Would be neglected with zero input value.
+  - Max path distance - stops search algorithm when found path distance exceeded given value. Would be neglected with zero input value.
+  - Max cost value - stops search algorithm when found path cost exceedes given value. Would be neglected with zero input value.
+- Outputs description
+  - Optimal path - path through neighbors from starting location to goal location which doesn't include neighbor with occupied area cost.
+  - Return code - would indicate, if path was found or not. If not, then it should include information why it failed (start/goal location not on map, any given limit exceeded, no possible path found etc.).
+  - Potentially some additional diagnostics output
+    - Cost, search time, path distance etc.. 
+Proposed simple API (which doesnt compile :( ):
+- Inputs
+  - Map - uint8 matrix which represents grid map. Zero means free area and 250 means occupied area. 251 up to 255 are undefined currently and may be used in the future (unknown area, inflation area based on robot footprint etc..)
+  - Starting location - matrix x and y coordinates.
+  - Goal location - matrix x and y coordinates.
+  - Distance cost amplifier - double value
+  - Max search time - double value
+  - Max path distance - double value
+  - Max cost value - double value
+- Outputs
+  - Optimal path - array of matrix coordinates.
+  - Return code - uint8 value (0 means successful search, values should be defined with enum)
+  - Return code description - enum
+    - 0 - successful search
+    - 1 - path not achievable
+    - 2 - max search time exceeded
+    - 3 - max path distance exceeded
+    - 4 - max cost value exceeded
+    - 5 - starting location not on map
+    - 6 - goal location not on map
