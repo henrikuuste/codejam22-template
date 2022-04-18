@@ -2,7 +2,7 @@
 id: 3akp1f97ditnk60n0seb19f
 title: API
 desc: ''
-updated: 1650266892550
+updated: 1650277059735
 created: 1649872895087
 ---
 Path planner API trade study for CodeJam22
@@ -31,10 +31,18 @@ Path planner API trade study for CodeJam22
 ```mermaid
 flowchart TD;
   PP[Path planner]
-  CM[Cost map]
+  CM[Cost provider]
   V[Vehicle]
   EDB[Environment DB]
   PF[Path following]
+  S[Search space]
+  CM-- provides cost -->PP
+  CM-- vehicle data? -->PP
+  CM-- search space -->PP
+  PP-->PF
+  EDB-- provides data -->CM
+  V-->S
+  S-->CM
 ```
 #### Usage
 ```mermaid
@@ -42,6 +50,13 @@ sequenceDiagram
   participant U as User
   participant PP as Path planner
   participant CM as Cost map
+  U ->> PP: plan(initial state, waypoints...)
+  activate PP
+  loop every search iteration
+    PP ->> CM: cost(???)
+  end
+  PP -->> U: path
+  deactivate PP
 ```
 
 ## Tests

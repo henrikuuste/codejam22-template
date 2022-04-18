@@ -2,7 +2,7 @@
 id: heevnidl1pazyyv7m5o7mx8
 title: Proposed tests
 desc: ''
-updated: 1650078824190
+updated: 1650267093259
 created: 1650078071145
 ---
 
@@ -10,9 +10,9 @@ created: 1650078071145
 - General unit tests.
 - Waypoint management test, are the waypoints updated properly
 - In case of different planners, do all of them work on a simple costmap
-- Do they give an output?
-- Is the output valid (check that it doesn't go through no-go zones, etc)
-- Do they work with 1 to n waypoints?
+  - Do they give an output?
+  - Is the output valid (check that it doesn't go through no-go zones, etc)
+  - Do they work with 1 to n waypoints?
 
 ## 2.
  * TEST1 : Start point within the range of the map
