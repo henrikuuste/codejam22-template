@@ -2,7 +2,7 @@
 id: j2634enztfp9u21yzf5u509
 title: Planner
 desc: ''
-updated: 1650276607015
+updated: 1650537505859
 created: 1650273170571
 ---
 ## Overview
@@ -49,13 +49,13 @@ Path plan(...);
 #### Stateful
 ```cpp
 struct Planner {
-  Path plan(CostMap const &map, State const &initial, TargetCriteria const &targets);
+  Path plan(CostProvider const &map, State const &initial, TargetCriteria const &targets);
 };
 
 // or
 
 struct Planner {
-  void setCostMap(CostMap const &map);
+  void setCostProvider(CostProvider const &map);
   Path plan(State const &initial, TargetCriteria const &targets);
 };
 ```
@@ -75,7 +75,7 @@ struct PlannerError {
 using PathOrError = tl::expected<Path, PlannerError>;
 
 struct Planner {
-  void setCostMap(CostMap const &map);
+  void setCostProvider(CostProvider const &map);
   PathOrError plan(State const &initial, TargetCriteria const &targets);
 };
 
@@ -84,7 +84,7 @@ auto result = planner.plan(...);
 #### Configuration
 ```cpp
 struct Planner {
-  void setCostMap(CostMap const &map);
+  void setCostProvider(CostProvider const &map);
   Planner& setTimeLimit(seconds_t limit);
   Planner& setDistanceLimit(std::optional<meter_t> limit);
   PathOrError plan(State const &initial, TargetCriteria const &targets);

@@ -2,7 +2,7 @@
 id: 3akp1f97ditnk60n0seb19f
 title: API
 desc: ''
-updated: 1650277059735
+updated: 1650543198622
 created: 1649872895087
 ---
 Path planner API trade study for CodeJam22
@@ -49,13 +49,26 @@ flowchart TD;
 sequenceDiagram
   participant U as User
   participant PP as Path planner
-  participant CM as Cost map
+  participant CM as Cost provider
+  participant S as Search space
+  participant EDB as Environment DB
+  S ->> CM: search space spec
+  U ->> PP: setCostProvider
+  CM ->> PP: search space spec
   U ->> PP: plan(initial state, waypoints...)
   activate PP
+  S ->> PP: update space
+  PP ->> CM: lock
   loop every search iteration
     PP ->> CM: cost(???)
+    activate CM
+    CM ->> EDB: query data
+    CM -->> PP: cost or error
+    deactivate CM
   end
-  PP -->> U: path
+  PP ->> CM: release
+  PP -->> U: path or error
+  U ->> PP: getDiagnostics()
   deactivate PP
 ```
 
