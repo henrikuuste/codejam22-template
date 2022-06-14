@@ -44,7 +44,8 @@
 		"fredericbonnet.cmake-test-adapter",
 		"matepek.vscode-catch2-test-adapter",
 		"aaron-bond.better-comments",
-		"IBM.output-colorizer"
+		"IBM.output-colorizer",
+		"formulahendry.code-runner"
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],

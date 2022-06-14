@@ -9,7 +9,7 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-set(LIB_DEPS spdlog/1.9.2)
+set(LIB_DEPS spdlog/1.9.2 eigen/3.4.0 units/2.3.1 expected-lite/0.5.0)
 set(LIB_BUILD_DEPS)
 
 if((NOT EXISTS ${PROJECT_BINARY_DIR}/conaninfo.txt) OR (${PROJECT_SOURCE_DIR}/cmake/conan_setup.cmake IS_NEWER_THAN
@@ -18,6 +18,8 @@ if((NOT EXISTS ${PROJECT_BINARY_DIR}/conaninfo.txt) OR (${PROJECT_SOURCE_DIR}/cm
     REQUIRES
     ${LIB_DEPS}
     catch2/2.13.8
+    docopt.cpp/0.6.3
+    freeimage/3.18.0
     BUILD_REQUIRES
     ${LIB_BUILD_DEPS}
     GENERATORS

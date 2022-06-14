@@ -1,0 +1,45 @@
+#pragma once
+
+#include "common.h"
+#include "state.h"
+
+namespace pathplanning {
+struct Cost {
+  using CostValue = float;
+  enum Classifier { UNKNOWN, FREE, NORMAL, IMPASSABLE };
+  // TODO implementation
+  // Implicit conversions?
+  // Hold invariants - unknown, free and impassable. negative cost
+  // Math operators
+  // Comparisons
+
+  Cost();
+  Cost(CostValue const &value);
+
+  Cost &operator+=(Cost const &other);
+  Cost &operator+=(CostValue const &other);
+  auto operator<=>(Cost const &other);
+
+  friend Cost operator+(Cost const &lhs, Cost const &rhs);
+  friend Cost operator+(Cost const &lhs, CostValue const &rhs);
+
+private:
+  Classifier type_;
+  CostValue value_;
+};
+
+struct ICostProvider {
+  enum Error { INTERNAL_ERROR, INVALID_STATE_INPUT };
+  using CostOrError = expected<Cost, Error>;
+
+  virtual ~ICostProvider()                                                   = default;
+  virtual CostOrError costBetween(State const &from, State const &to)        = 0;
+  virtual CostOrError costOfStateChange(State const &from, State const &to)  = 0;
+  virtual CostOrError costOfEnvTraversal(State const &from, State const &to) = 0;
+  virtual CostOrError costOfTerrain(State const &from, State const &to)      = 0;
+  virtual StateBounds bounds() const                                         = 0;
+  virtual SearchSpace const &searchSpace() const                             = 0;
+  virtual Lock &lock()                                                       = 0;
+  virtual void release(Lock &lock)                                           = 0;
+};
+} // namespace pathplanning
