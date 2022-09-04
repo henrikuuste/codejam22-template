@@ -4,13 +4,16 @@
 
 namespace pathplanning {
 
-using Location     = Vec2;
-using Elevation    = Real; // TODO use Vec<1> instead?
-using Orientation  = Real;
-using LinearSpeed  = Real;
-using AngularSpeed = Real;
+using Location            = Vec2;
+using Elevation           = Real; // TODO use Vec<1> instead?
+using Orientation         = Real;
+using LinearSpeed         = Real;
+using AngularSpeed        = Real;
+using Acceleration        = Real;
+using AngularAcceleration = Real;
+using Dimensions          = Vec3;
 
-struct StateDistance;
+struct StateDifference;
 
 // TODO defaults?
 struct State {
@@ -20,6 +23,7 @@ struct State {
 
   using StateVector = Vec<StateDim>;
   // NOTE essentially moving towards IndexedVector from ukf++
+  // Is this really necessary in this codebase to do state access really really fast
   Location &loc() const;
   // TODO direction
   Elevation &elevation() const;
@@ -27,13 +31,16 @@ struct State {
   LinearSpeed linear_speed;
   AngularSpeed angular_speed;
   TimePoint time;
+  Acceleration acceleration;
+  AngularAcceleration angular_acceleration;
+  Dimensions dimensions;
 
-  State &operator+=(StateDistance const &other);
-  State &operator-=(StateDistance const &other);
+  State &operator+=(StateDifference const &other);
+  State &operator-=(StateDifference const &other);
 
-  friend State operator+(State const &lhs, StateDistance const &rhs);
-  friend State operator-(State const &lhs, StateDistance const &rhs);
-  friend StateDistance operator-(State const &lhs, State const &rhs);
+  friend State operator+(State const &lhs, StateDifference const &rhs);
+  friend State operator-(State const &lhs, StateDifference const &rhs);
+  friend StateDifference operator-(State const &lhs, State const &rhs);
 
 private:
   StateVector data_;
@@ -41,34 +48,36 @@ private:
   // TODO implementation
 };
 
-struct StateDistance {
-  Vec2 loc_distance;
-  Real orient_distance;
-  Real linear_speed_distance;
-  Real angular_speed_distance;
-  TimeDiff time_distance;
+struct StateDifference {
+  Vec2 loc_difference;
+  Real orient_difference;
+  Real linear_speed_difference;
+  Real angular_speed_difference;
+  TimeDiff time_difference;
 
-  // TODO orient periodicity - do we want the shortest distance?
+  // TODO orient periodicity - do we want the shortest difference?
   // TODO implementation
 };
 
 struct StateBounds {
   StateBounds(State const &min, State const &max);
-  StateBounds(State const &center, StateDistance const &halfSize);
+  StateBounds(State const &center, StateDifference const &halfSize);
   State const &min() const;
   State const &max() const;
   State center() const;
-  StateDistance fullSize() const;
-  StateDistance halfSize() const;
+  StateDifference fullSize() const;
+  StateDifference halfSize() const;
   // TODO implementation
 };
 
+// dont understand use case for this
 struct StateRadius {
   State const &center() const;
-  StateDistance const &radius() const;
+  StateDifference const &radius() const;
   // TODO implementation
 };
 
+// dont understand use case for this
 // TODO CostState
 struct CostState {
   State state;

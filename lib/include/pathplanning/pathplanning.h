@@ -7,6 +7,7 @@
 #include "cost.h"
 #include "search_space.h"
 #include "target.h"
+#include "vehicle.h"
 
 namespace pathplanning {
 

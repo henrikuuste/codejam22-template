@@ -37,7 +37,7 @@ struct StateBoundsRect {
 // circular bounds
 struct StateBoundsCircular {
   State center() const;
-  StateDistance maxDistance() const;
+  StateDifference maxDistance() const;
 };
 // asymmetric bounds...
 ```
@@ -49,7 +49,7 @@ struct TargetCriteria {
   virtual bool atTarget(State const &state) const { return fitness(state) > 0.f; };
   virtual Fitness fitness(State const &state) const = 0;
   virtual Fitness fitness(Path const &state) const = 0; // TODO
-  virtual TargetCriteria& setAllowedError(StateDistance const &error) = 0;
+  virtual TargetCriteria& setAllowedError(StateDifference const &error) = 0;
   virtual Cost heuristic(State const &state) const { return {}; };
 };
 

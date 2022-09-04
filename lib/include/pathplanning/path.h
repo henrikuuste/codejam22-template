@@ -6,14 +6,15 @@
 
 namespace pathplanning {
 struct Waypoint {
-  Location loc;
+  State target; // what defines a waypoint
 };
 
 struct Path {
   // TODO interface definition
   using WaypointList = std::vector<Waypoint>;
   WaypointList path;
-  bool empty() const {return path.empty();};
-  Waypoint back() const {return path.back();};
+
+  bool empty() const { return path.empty(); };
+  Waypoint back() const { return path.back(); };
 };
 } // namespace pathplanning

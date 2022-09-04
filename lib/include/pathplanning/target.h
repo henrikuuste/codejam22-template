@@ -2,10 +2,10 @@
 
 #include "common.h"
 #include "cost.h"
+#include "math_utils.h"
 #include "path.h"
 #include <memory>
 #include <vector>
-#include "math_utils.h"
 
 namespace pathplanning {
 // TODO target path vs target waypoint
@@ -16,8 +16,8 @@ struct ITargetCriteria {
   virtual ~ITargetCriteria() = default;
 
   // Functions that must be implemented by derived class
-  virtual Fitness fitness(Path const &path) const                      = 0;
-  virtual ITargetCriteria &setAllowedError(StateDistance const &error) = 0;
+  virtual Fitness fitness(Path const &path) const                        = 0;
+  virtual ITargetCriteria &setAllowedError(StateDifference const &error) = 0;
 
   virtual Cost heuristic(Path const &path) const = 0;
   virtual bool satisfiesCriteria(Path const &path) const { return fitness(path) > 0.f; };
@@ -32,12 +32,12 @@ struct PointTarget : public ITargetCriteria {
   Fitness fitness(Path const &path) const override {
     if (path.empty())
       return 0.f;
-    Vec2 diff = goal - path.back().loc;
-    return diff.x() <= allowed_error.loc_distance.x() and
-           diff.y() <= allowed_error.loc_distance.y();
+    Vec2 diff = goal - path.back().target.loc();
+    return diff.x() <= allowed_error.loc_difference.x() and
+           diff.y() <= allowed_error.loc_difference.y();
   }
 
-  ITargetCriteria &setAllowedError(StateDistance const &error) override {
+  ITargetCriteria &setAllowedError(StateDifference const &error) override {
     allowed_error = error;
     return *this;
   }
@@ -45,10 +45,10 @@ struct PointTarget : public ITargetCriteria {
   Cost heuristic(Path const &path) const {
     if (path.empty())
       return Cost::UNKNOWN;
-    return agv_math::distanceBetween(path.back().loc, goal);
+    return agv_math::distanceBetween(path.back().target.loc(), goal);
   };
 
-  StateDistance allowed_error;
+  StateDifference allowed_error;
   Location goal;
 };
 // TargetWithRadius
