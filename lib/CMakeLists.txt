@@ -12,6 +12,7 @@ if(CONAN_EXPORTED)
 endif()
 
 find_package(spdlog REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 set(LIB_SOURCES pathplanning.cpp)
 
@@ -24,6 +25,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} PRIVATE project_options project_warnings)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
 
 include(GenerateExportHeader)
 generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME include/${PROJECT_NAME}/export.h)

@@ -5,10 +5,15 @@
 #include <vector>
 
 namespace pathplanning {
-struct Waypoint {};
+struct Waypoint {
+  Location loc;
+};
 
 struct Path {
   // TODO interface definition
   using WaypointList = std::vector<Waypoint>;
+  WaypointList path;
+  bool empty() const {return path.empty();};
+  Waypoint back() const {return path.back();};
 };
 } // namespace pathplanning

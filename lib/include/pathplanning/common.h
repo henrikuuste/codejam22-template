@@ -2,7 +2,7 @@
 
 #include <Eigen/Dense>
 #include <nonstd/expected.hpp>
-#include <units.h>
+#include <units/units.h>
 
 namespace pathplanning {
 using Real = double;
@@ -27,6 +27,7 @@ using namespace units::energy;
 
 using TimePoint = seconds;
 using TimeDiff  = seconds;
+using seconds_t = Real;
 
 using namespace nonstd;
 

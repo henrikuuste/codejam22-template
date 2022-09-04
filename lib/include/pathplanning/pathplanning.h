@@ -6,6 +6,7 @@
 #include "common.h"
 #include "cost.h"
 #include "search_space.h"
+#include "target.h"
 
 namespace pathplanning {
 
@@ -22,7 +23,7 @@ struct IPlanner {
   virtual PathOrError plan(State const &initial, TargetList const &targets) = 0;
   virtual IPlanner *setCostProvider(ICostProvider *provider)                = 0;
   virtual IPlanner *setTimeLimit(seconds_t limit)                           = 0;
-  virtual PlannerDiagnostics getDiagnostics()                               = 0;
+  // virtual PlannerDiagnostics getDiagnostics()                               = 0;
 };
 
 } // namespace pathplanning

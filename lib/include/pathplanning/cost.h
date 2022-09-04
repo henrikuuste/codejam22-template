@@ -2,10 +2,11 @@
 
 #include "common.h"
 #include "state.h"
+#include "search_space.h"
 
 namespace pathplanning {
 struct Cost {
-  using CostValue = float;
+  using CostValue = Real;
   enum Classifier { UNKNOWN, FREE, NORMAL, IMPASSABLE };
   // TODO implementation
   // Implicit conversions?
@@ -39,7 +40,7 @@ struct ICostProvider {
   virtual CostOrError costOfTerrain(State const &from, State const &to)      = 0;
   virtual StateBounds bounds() const                                         = 0;
   virtual SearchSpace const &searchSpace() const                             = 0;
-  virtual Lock &lock()                                                       = 0;
-  virtual void release(Lock &lock)                                           = 0;
+  // virtual Lock &lock()                                                       = 0;
+  // virtual void release(Lock &lock)                                           = 0;
 };
 } // namespace pathplanning

@@ -5,6 +5,7 @@
 #include "path.h"
 #include <memory>
 #include <vector>
+#include "math_utils.h"
 
 namespace pathplanning {
 // TODO target path vs target waypoint
@@ -18,7 +19,7 @@ struct ITargetCriteria {
   virtual Fitness fitness(Path const &path) const                      = 0;
   virtual ITargetCriteria &setAllowedError(StateDistance const &error) = 0;
 
-  virtual Cost heuristic(Path const &path) const { return {}; };
+  virtual Cost heuristic(Path const &path) const = 0;
   virtual bool satisfiesCriteria(Path const &path) const { return fitness(path) > 0.f; };
 };
 
@@ -44,12 +45,12 @@ struct PointTarget : public ITargetCriteria {
   Cost heuristic(Path const &path) const {
     if (path.empty())
       return Cost::UNKNOWN;
-    return distanceBetween(path.back().loc, goal);
+    return agv_math::distanceBetween(path.back().loc, goal);
   };
 
   StateDistance allowed_error;
   Location goal;
-}
+};
 // TargetWithRadius
 // PathSegmentTarget | WaypointTarget
 
