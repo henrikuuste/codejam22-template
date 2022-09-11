@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "internal/common.h"
 // TODO: Make agv_math into a library and include here (currently units uses "math" namespace)
 
 namespace agv_math {

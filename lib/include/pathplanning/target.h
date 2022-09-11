@@ -1,57 +1,47 @@
 #pragma once
 
-#include "common.h"
 #include "cost.h"
-#include "math_utils.h"
+#include "internal/common.h"
 #include "path.h"
-#include <memory>
+#include "state.h"
+
 #include <vector>
 
 namespace pathplanning {
-// TODO target path vs target waypoint
-// NOTE path based would need a next() method or something
-// NOTE waypoint based becomes interesting with the space between - from -> to
+
 struct ITargetCriteria {
-  using Fitness              = float; // TODO should this be == Cost
+  using Fitness              = float; // TODO should this be == Cost?
   virtual ~ITargetCriteria() = default;
 
-  // Functions that must be implemented by derived class
-  virtual Fitness fitness(Path const &path) const                        = 0;
-  virtual ITargetCriteria &setAllowedError(StateDifference const &error) = 0;
+  /**
+   * @brief Evaluate how well the given path fits/matches the target criteria
+   *
+   * @return Fitness values <= 0 mean that the path does not satisfy the criteria
+   */
+  virtual Fitness fitness(Path const &path) const = 0;
 
-  virtual Cost heuristic(Path const &path) const = 0;
+  /**
+   * @brief By default, a given path satisfies the target criteria if the fitness is above 0
+   *
+   * @return true The given path satisfies the target criteria
+   */
   virtual bool satisfiesCriteria(Path const &path) const { return fitness(path) > 0.f; };
+
+  /**
+   * @brief The allowed error is set based on the internal structure of the planner to account for
+   * things like grid resolution
+   */
+  virtual ITargetCriteria &setAllowedError(State::Distance const &error) = 0;
+
+  /**
+   * @brief Provide a heuristic value to guide the search towards the target
+   *
+   * @param path The current path from the search algorithm
+   * @return Cost Heuristic value as a cost that can be compared
+   */
+  virtual Cost heuristic(Path const &path) const { return {}; };
 };
 
 using TargetList = std::vector<std::unique_ptr<ITargetCriteria>>;
-
-// TODO target criteria implementations
-struct PointTarget : public ITargetCriteria {
-  PointTarget(Location target) : goal(target) {}
-
-  Fitness fitness(Path const &path) const override {
-    if (path.empty())
-      return 0.f;
-    Vec2 diff = goal - path.back().target.loc();
-    return diff.x() <= allowed_error.loc_difference.x() and
-           diff.y() <= allowed_error.loc_difference.y();
-  }
-
-  ITargetCriteria &setAllowedError(StateDifference const &error) override {
-    allowed_error = error;
-    return *this;
-  }
-
-  Cost heuristic(Path const &path) const {
-    if (path.empty())
-      return Cost::UNKNOWN;
-    return agv_math::distanceBetween(path.back().target.loc(), goal);
-  };
-
-  StateDifference allowed_error;
-  Location goal;
-};
-// TargetWithRadius
-// PathSegmentTarget | WaypointTarget
 
 } // namespace pathplanning

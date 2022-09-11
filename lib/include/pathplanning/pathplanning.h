@@ -3,11 +3,12 @@
 #include <pathplanning/export.h>
 #include <string_view>
 
-#include "common.h"
+#include "internal/common.h"
 #include "cost.h"
 #include "search_space.h"
-#include "target.h"
 #include "vehicle.h"
+#include "path.h"
+#include "target.h"
 
 namespace pathplanning {
 

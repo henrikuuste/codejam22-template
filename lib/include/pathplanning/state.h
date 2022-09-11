@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "internal/common.h"
 
 namespace pathplanning {
 
@@ -20,6 +20,10 @@ struct State {
   // TODO coordinate system?
   enum StateField { LOCATION, ELEVATION, ORIENTATION, LIN_SPEED, ANG_SPEED };
   static constexpr size_t StateDim = Location::RowsAtCompileTime + 4; // TODO think about this
+
+  struct Distance {
+    // TODO
+  };
 
   using StateVector = Vec<StateDim>;
   // NOTE essentially moving towards IndexedVector from ukf++

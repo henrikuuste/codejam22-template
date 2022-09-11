@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "internal/common.h"
 #include "state.h"
 #include <vector>
 
