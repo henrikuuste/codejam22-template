@@ -46,6 +46,10 @@ struct State {
   friend State operator-(State const &lhs, StateDifference const &rhs);
   friend StateDifference operator-(State const &lhs, State const &rhs);
 
+  // TODO fix shitty getters and setters
+  StateVector getState() const { return data_; }
+  void setStateElement(Real value, Index idx) { data_(idx) = value; }
+
 private:
   StateVector data_;
   // TODO orient periodicity
@@ -64,7 +68,7 @@ struct StateDifference {
 };
 
 struct StateBounds {
-  StateBounds(State const &min, State const &max);
+  StateBounds(State const &min, State const &max) : _min(min), _max(max){};
   StateBounds(State const &center, StateDifference const &halfSize);
   State const &min() const;
   State const &max() const;
@@ -72,6 +76,9 @@ struct StateBounds {
   StateDifference fullSize() const;
   StateDifference halfSize() const;
   // TODO implementation
+private:
+  State _min;
+  State _max;
 };
 
 // dont understand use case for this

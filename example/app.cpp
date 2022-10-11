@@ -3,6 +3,37 @@
 #include <pathplanning/pathplanning.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/stopwatch.h>
+#include <array>
+using namespace pathplanning;
+
+struct SimpleCostProvider : ICostProvider {
+  std::vector<std::vector<size_t>> env{{0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 1}, {0, 1, 1, 0, 1, 0},
+                                       {0, 0, 0, 0, 0, 0}, {1, 1, 1, 0, 1, 0}, {1, 1, 1, 0, 0, 0}};
+
+  CostOrError costBetween(State const &from, State const &to) override {
+    CostOrError cost = costOfTerrain(from, to);
+    return cost;
+  }
+  CostOrError costOfStateChange(State const &from, State const &to) override {
+    return INTERNAL_ERROR;
+  }
+  CostOrError costOfEnvTraversal(State const &from, State const &to) override {
+    return INTERNAL_ERROR;
+  }
+  CostOrError costOfTerrain(State const &from, State const &to) override {
+    return Cost(from.getState()(0) + to.getState()(0)); // random value
+  }
+  StateBounds bounds() const override {
+    State min_state;
+    min_state.setStateElement(0, 0);
+    min_state.setStateElement(0, 1);
+    State max_state;
+    max_state.setStateElement(5, 0);
+    max_state.setStateElement(5, 1);
+    return {min_state, max_state};
+  }
+  SearchSpace const &searchSpace() const override { return {}; }
+};
 
 int main() {
   spdlog::stopwatch sw;
@@ -13,7 +44,23 @@ int main() {
   std::cout << "======================\n";
   // task1
   // create and store environment costmap
+  State initial_state;
+  initial_state.setStateElement(0, 0);
+  initial_state.setStateElement(0, 1);
+  std::cout << initial_state.getState() << "\n";
+  State goal_state;
+  goal_state.setStateElement(4, 0);
+  goal_state.setStateElement(4, 1);
+  std::cout << goal_state.getState() << "\n";
 
+  SimpleCostProvider cost_provider;
+  SimpleCostProvider::CostOrError cost = cost_provider.costBetween(initial_state, goal_state);
+  if (cost.has_value()) {
+    std::cout << cost.value() << "\n";
+  } else {
+    std::cout << "Sumding Wong"
+              << "\n";
+  }
   // task 1.5
   // create cost provider using costmap
   // define initial vehicle state

@@ -15,7 +15,9 @@ struct Cost {
   // Comparisons
 
   Cost();
-  Cost(CostValue const &value);
+  Cost(CostValue const &value) : value_(value) {
+
+  }
 
   Cost &operator+=(Cost const &other);
   Cost &operator+=(CostValue const &other);
@@ -23,6 +25,9 @@ struct Cost {
 
   friend Cost operator+(Cost const &lhs, Cost const &rhs);
   friend Cost operator+(Cost const &lhs, CostValue const &rhs);
+  friend std::ostream &operator<<(std::ostream &out, const Cost &c) {
+    std::cout << "Cost: " << c.value_ << "\n";
+  }
 
 private:
   Classifier type_;

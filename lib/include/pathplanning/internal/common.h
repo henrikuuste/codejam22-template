@@ -5,8 +5,8 @@
 #include <units/units.h>
 
 namespace pathplanning {
-using Real = double;
-
+using Real                                    = double;
+using Index                                   = Eigen::Index;
 template <size_t Rows, size_t Cols> using Mat = Eigen::Matrix<Real, Rows, Cols>;
 using Mat3                                    = Mat<3, 3>;
 using Mat4                                    = Mat<4, 4>;
