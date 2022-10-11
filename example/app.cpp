@@ -7,8 +7,8 @@
 using namespace pathplanning;
 
 struct SimpleCostProvider : ICostProvider {
-  std::vector<std::vector<size_t>> env{{0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 1}, {0, 1, 1, 0, 1, 0},
-                                       {0, 0, 0, 0, 0, 0}, {1, 1, 1, 0, 1, 0}, {1, 1, 1, 0, 0, 0}};
+  std::vector<std::vector<float>> env{{0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 1}, {0, 1, 1, 0, 1, 0},
+                                      {0, 0, 0, 0, 0, 0}, {1, 1, 1, 0, 1, 0}, {1, 1, 1, 0, 0, 0}};
 
   CostOrError costBetween(State const &from, State const &to) override {
     CostOrError cost = costOfTerrain(from, to);
@@ -21,7 +21,12 @@ struct SimpleCostProvider : ICostProvider {
     return INTERNAL_ERROR;
   }
   CostOrError costOfTerrain(State const &from, State const &to) override {
-    return Cost(from.getState()(0) + to.getState()(0)); // random value
+    auto from_state = from.getState();
+    auto env_from   = env.at(from_state(1)).at(from_state(0));
+    auto to_state   = to.getState();
+    auto env_to     = env.at(to_state(1)).at(to_state(0));
+
+    return Cost(env_to - env_from); // random value
   }
   StateBounds bounds() const override {
     State min_state;
@@ -49,8 +54,8 @@ int main() {
   initial_state.setStateElement(0, 1);
   std::cout << initial_state.getState() << "\n";
   State goal_state;
-  goal_state.setStateElement(4, 0);
-  goal_state.setStateElement(4, 1);
+  goal_state.setStateElement(5, 0);
+  goal_state.setStateElement(5, 1);
   std::cout << goal_state.getState() << "\n";
 
   SimpleCostProvider cost_provider;
