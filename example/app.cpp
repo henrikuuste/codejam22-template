@@ -7,28 +7,26 @@
 using namespace pathplanning;
 
 struct SimpleCostProvider : ICostProvider {
+  // task1
+  // create and store environment costmap
   std::vector<std::vector<float>> env{{0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 1}, {0, 1, 1, 0, 1, 0},
                                       {0, 0, 0, 0, 0, 0}, {1, 1, 1, 0, 1, 0}, {1, 1, 1, 0, 0, 0}};
 
-  CostOrError costBetween(State const &from, State const &to) override {
-    CostOrError cost = costOfTerrain(from, to);
+  CostOrError costBetween(StateQuery const &query) override {
+    CostOrError cost = costOfTerrain(query);
     return cost;
   }
-  CostOrError costOfStateChange(State const &from, State const &to) override {
-    return INTERNAL_ERROR;
-  }
-  CostOrError costOfEnvTraversal(State const &from, State const &to) override {
-    return INTERNAL_ERROR;
-  }
-  CostOrError costOfTerrain(State const &from, State const &to) override {
-    auto from_state = from.getState();
+  CostOrError costOfStateChange(StateQuery const &query) override { return INTERNAL_ERROR; }
+  CostOrError costOfEnvTraversal(StateQuery const &query) override { return INTERNAL_ERROR; }
+  CostOrError costOfTerrain(StateQuery const &query) override {
+    auto from_state = query.from.getState();
     auto env_from   = env.at(from_state(1)).at(from_state(0));
-    auto to_state   = to.getState();
+    auto to_state   = query.to.getState();
     auto env_to     = env.at(to_state(1)).at(to_state(0));
 
     return Cost(env_to - env_from); // random value
   }
-  StateBounds bounds() const override {
+  [[nodiscard]] StateBounds bounds() const override {
     State min_state;
     min_state.setStateElement(0, 0);
     min_state.setStateElement(0, 1);
@@ -37,7 +35,7 @@ struct SimpleCostProvider : ICostProvider {
     max_state.setStateElement(5, 1);
     return {min_state, max_state};
   }
-  SearchSpace const &searchSpace() const override { return {}; }
+  [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 };
 
 int main() {
@@ -47,8 +45,11 @@ int main() {
   std::cout << "======================\n";
   spdlog::info("Planning library version {}", pathplanning::version());
   std::cout << "======================\n";
-  // task1
-  // create and store environment costmap
+
+  // task 1.5
+  // create cost provider using costmap
+  // define initial vehicle state
+  // define goal state
   State initial_state;
   initial_state.setStateElement(0, 0);
   initial_state.setStateElement(0, 1);
@@ -59,17 +60,13 @@ int main() {
   std::cout << goal_state.getState() << "\n";
 
   SimpleCostProvider cost_provider;
-  SimpleCostProvider::CostOrError cost = cost_provider.costBetween(initial_state, goal_state);
+  SimpleCostProvider::CostOrError cost = cost_provider.costBetween({initial_state, goal_state});
   if (cost.has_value()) {
     std::cout << cost.value() << "\n";
   } else {
     std::cout << "Sumding Wong"
               << "\n";
   }
-  // task 1.5
-  // create cost provider using costmap
-  // define initial vehicle state
-  // define goal state
 
   // task 2 - integrate this
   // create planner object

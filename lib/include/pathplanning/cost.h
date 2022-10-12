@@ -15,9 +15,7 @@ struct Cost {
   // Comparisons
 
   Cost();
-  Cost(CostValue const &value) : value_(value) {
-
-  }
+  Cost(CostValue const &value) : value_(value) {}
 
   Cost &operator+=(Cost const &other);
   Cost &operator+=(CostValue const &other);
@@ -26,7 +24,8 @@ struct Cost {
   friend Cost operator+(Cost const &lhs, Cost const &rhs);
   friend Cost operator+(Cost const &lhs, CostValue const &rhs);
   friend std::ostream &operator<<(std::ostream &out, const Cost &c) {
-    std::cout << "Cost: " << c.value_ << "\n";
+    out << "Cost: " << c.value_ << "\n";
+    return out;
   }
 
 private:
@@ -38,13 +37,13 @@ struct ICostProvider {
   enum Error { INTERNAL_ERROR, INVALID_STATE_INPUT };
   using CostOrError = expected<Cost, Error>;
 
-  virtual ~ICostProvider()                                                   = default;
-  virtual CostOrError costBetween(State const &from, State const &to)        = 0;
-  virtual CostOrError costOfStateChange(State const &from, State const &to)  = 0;
-  virtual CostOrError costOfEnvTraversal(State const &from, State const &to) = 0;
-  virtual CostOrError costOfTerrain(State const &from, State const &to)      = 0;
-  virtual StateBounds bounds() const                                         = 0;
-  virtual SearchSpace const &searchSpace() const                             = 0;
+  virtual ~ICostProvider()                                        = default;
+  virtual CostOrError costBetween(StateQuery const &query)        = 0;
+  virtual CostOrError costOfStateChange(StateQuery const &query)  = 0;
+  virtual CostOrError costOfEnvTraversal(StateQuery const &query) = 0;
+  virtual CostOrError costOfTerrain(StateQuery const &query)      = 0;
+  virtual StateBounds bounds() const                              = 0;
+  virtual SearchSpace const &searchSpace() const                  = 0;
   // virtual Lock &lock()                                                       = 0;
   // virtual void release(Lock &lock)                                           = 0;
 };

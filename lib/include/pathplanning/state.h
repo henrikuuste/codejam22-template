@@ -67,6 +67,13 @@ struct StateDifference {
   // TODO implementation
 };
 
+// making compiler happy
+struct StateQuery {
+  State from;
+  State to;
+  StateQuery(State const &from_, State const &to_) : from(from_), to(to_){};
+};
+
 struct StateBounds {
   StateBounds(State const &min, State const &max) : _min(min), _max(max){};
   StateBounds(State const &center, StateDifference const &halfSize);
