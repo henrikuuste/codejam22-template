@@ -38,6 +38,14 @@ struct SimpleCostProvider : ICostProvider {
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 };
 
+struct SimplePlanner : IPlanner {
+  PathOrError plan(State const &initial, TargetList const &targets) override {
+    return unexpected<Error>{Error::INTERNAL_ERROR};
+  }
+  IPlanner *setCostProvider(ICostProvider *provider) override { return this; }
+  IPlanner *setTimeLimit(seconds_t limit) override { return this; }
+};
+
 int main() {
   spdlog::stopwatch sw;
   std::cout << "======================\n";
@@ -67,6 +75,7 @@ int main() {
     std::cout << "Sumding Wong"
               << "\n";
   }
+  SimplePlanner planner;
 
   // task 2 - integrate this
   // create planner object
