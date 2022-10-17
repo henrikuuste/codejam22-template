@@ -23,12 +23,16 @@ struct State {
 
   struct Distance {
     // TODO
+    Vec2 loc_distance;
   };
 
   using StateVector = Vec<StateDim>;
   // NOTE essentially moving towards IndexedVector from ukf++
   // Is this really necessary in this codebase to do state access really really fast
-  Location &loc() const;
+  Location &loc() const {
+    Location _loc = data_.head(2);
+    return _loc;
+  }
   // TODO direction
   Elevation &elevation() const;
   Orientation &orient() const; // just heading

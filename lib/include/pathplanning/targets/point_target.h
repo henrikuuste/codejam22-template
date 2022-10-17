@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../target.h"
-
-namespace pathplanner {
+#include "../math_utils.h"
+namespace pathplanning {
 
 /**
  * @brief Exact location that must be reached within the allowed numeric error.
@@ -15,7 +15,7 @@ struct PointTarget : public ITargetCriteria {
     if (path.empty())
       return 0.f;
     // TODO think about this
-    Vec2 diff = (goal - path.last().loc()).cwiseAbs();
+    Vec2 diff = (goal - path.back().target.loc()).cwiseAbs();
     return (diff.x() <= allowed_error.loc_distance.x()) &&
            (diff.y() <= allowed_error.loc_distance.y());
   }
@@ -28,11 +28,11 @@ struct PointTarget : public ITargetCriteria {
   Cost heuristic(Path const &path) const {
     if (path.empty())
       return Cost::UNKNOWN;
-    return distanceBetween(path.last().loc(), goal);
+    return agv_math::distanceBetween(path.back().target.loc(), goal);
   };
 
-  StateDistance allowed_error;
+  State::Distance allowed_error;
   Location goal;
 };
 
-} // namespace pathplanner
+} // namespace pathplanning

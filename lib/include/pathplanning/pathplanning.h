@@ -9,6 +9,7 @@
 #include "vehicle.h"
 #include "path.h"
 #include "target.h"
+#include "targets/point_target.h"
 
 namespace pathplanning {
 

@@ -42,8 +42,14 @@ struct SimplePlanner : IPlanner {
   PathOrError plan(State const &initial, TargetList const &targets) override {
     return unexpected<Error>{Error::INTERNAL_ERROR};
   }
-  IPlanner *setCostProvider(ICostProvider *provider) override { return this; }
+  IPlanner *setCostProvider(ICostProvider *provider) override {
+    cost_provider = provider;
+    return this;
+  }
   IPlanner *setTimeLimit(seconds_t limit) override { return this; }
+
+private:
+  ICostProvider *cost_provider;
 };
 
 int main() {
@@ -61,11 +67,11 @@ int main() {
   State initial_state;
   initial_state.setStateElement(0, 0);
   initial_state.setStateElement(0, 1);
-  std::cout << initial_state.getState() << "\n";
+  // std::cout << initial_state.getState() << "\n";
   State goal_state;
   goal_state.setStateElement(5, 0);
   goal_state.setStateElement(5, 1);
-  std::cout << goal_state.getState() << "\n";
+  // std::cout << goal_state.getState() << "\n";
 
   SimpleCostProvider cost_provider;
   SimpleCostProvider::CostOrError cost = cost_provider.costBetween({initial_state, goal_state});
@@ -76,7 +82,7 @@ int main() {
               << "\n";
   }
   SimplePlanner planner;
-
+  planner.setCostProvider(&cost_provider);
   // task 2 - integrate this
   // create planner object
   // make planner plan from initial state to goal state
