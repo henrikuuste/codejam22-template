@@ -14,7 +14,7 @@ struct Cost {
   // Math operators
   // Comparisons
 
-  Cost();
+  Cost() {}
   Cost(CostValue const &value) : value_(value) {}
 
   Cost &operator+=(Cost const &other);

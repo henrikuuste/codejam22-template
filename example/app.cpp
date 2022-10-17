@@ -83,6 +83,12 @@ int main() {
   }
   SimplePlanner planner;
   planner.setCostProvider(&cost_provider);
+  TargetList targets;
+  Vec2 target_loc;
+  target_loc << 5, 5;
+  PointTarget point_target(target_loc);
+  targets.emplace_back(std::make_unique<PointTarget>(point_target));
+  SimplePlanner::PathOrError result = planner.plan(initial_state, targets);
   // task 2 - integrate this
   // create planner object
   // make planner plan from initial state to goal state
