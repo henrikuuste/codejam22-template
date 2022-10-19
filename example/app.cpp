@@ -19,10 +19,10 @@ struct SimpleCostProvider : ICostProvider {
   CostOrError costOfStateChange(StateQuery const &query) override { return INTERNAL_ERROR; }
   CostOrError costOfEnvTraversal(StateQuery const &query) override { return INTERNAL_ERROR; }
   CostOrError costOfTerrain(StateQuery const &query) override {
-    auto from_state = query.from.getState();
-    auto env_from   = env.at(from_state(1)).at(from_state(0));
-    auto to_state   = query.to.getState();
-    auto env_to     = env.at(to_state(1)).at(to_state(0));
+    auto loc_from = query.from.loc();
+    auto env_from = env.at(static_cast<size_t>(loc_from.y())).at(static_cast<size_t>(loc_from.x()));
+    auto loc_to   = query.to.loc();
+    auto env_to   = env.at(static_cast<size_t>(loc_to.y())).at(static_cast<size_t>(loc_to.x()));
 
     return Cost(env_to - env_from); // random value
   }
@@ -39,17 +39,18 @@ struct SimpleCostProvider : ICostProvider {
 };
 
 struct SimplePlanner : IPlanner {
+  SimplePlanner() = default;
   PathOrError plan(State const &initial, TargetList const &targets) override {
     return unexpected<Error>{Error::INTERNAL_ERROR};
   }
-  IPlanner *setCostProvider(ICostProvider *provider) override {
+  IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) override {
     cost_provider = provider;
     return this;
   }
   IPlanner *setTimeLimit(seconds_t limit) override { return this; }
 
 private:
-  ICostProvider *cost_provider;
+  std::weak_ptr<ICostProvider> cost_provider;
 };
 
 int main() {
@@ -73,8 +74,9 @@ int main() {
   goal_state.setStateElement(5, 1);
   // std::cout << goal_state.getState() << "\n";
 
-  SimpleCostProvider cost_provider;
-  SimpleCostProvider::CostOrError cost = cost_provider.costBetween({initial_state, goal_state});
+  auto cost_provider = std::make_shared<SimpleCostProvider>();
+
+  SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state, goal_state});
   if (cost.has_value()) {
     std::cout << cost.value() << "\n";
   } else {
@@ -82,9 +84,10 @@ int main() {
               << "\n";
   }
   SimplePlanner planner;
-  planner.setCostProvider(&cost_provider);
+
+  planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
   TargetList targets;
-  Vec2 target_loc;
+  Vec2 target_loc(5, 5);
   target_loc << 5, 5;
   PointTarget point_target(target_loc);
   targets.emplace_back(std::make_unique<PointTarget>(point_target));

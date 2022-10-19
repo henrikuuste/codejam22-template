@@ -2,6 +2,7 @@
 
 #include "cost.h"
 #include "internal/common.h"
+#include <memory>
 
 namespace pathplanning {
 
@@ -16,8 +17,8 @@ struct IPlanner {
   // Functions that must be implemented by derived class
   virtual PathOrError plan(State const &initial, TargetList const &targets) = 0;
   // TODO a more general config input?
-  virtual IPlanner *setCostProvider(ICostProvider *provider) = 0;
-  virtual IPlanner *setTimeLimit(seconds_t limit)            = 0;
+  virtual IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) = 0;
+  virtual IPlanner *setTimeLimit(seconds_t limit)                          = 0;
   // TODO what is the diagnostics format?
   virtual PlannerDiagnostics getDiagnostics() = 0;
 };

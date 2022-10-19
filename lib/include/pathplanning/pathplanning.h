@@ -15,6 +15,7 @@ namespace pathplanning {
 
 PATHPLANNING_EXPORT std::string_view version();
 
+// TODO why is this in both this file and planner.h
 struct IPlanner {
   virtual ~IPlanner() = default;
 
@@ -24,7 +25,7 @@ struct IPlanner {
 
   // Functions that must be implemented by derived class
   virtual PathOrError plan(State const &initial, TargetList const &targets) = 0;
-  virtual IPlanner *setCostProvider(ICostProvider *provider)                = 0;
+  virtual IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider)  = 0;
   virtual IPlanner *setTimeLimit(seconds_t limit)                           = 0;
   // virtual PlannerDiagnostics getDiagnostics()                               = 0;
 };
