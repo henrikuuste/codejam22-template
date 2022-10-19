@@ -9,8 +9,15 @@ using namespace pathplanning;
 struct SimpleCostProvider : ICostProvider {
   // task1
   // create and store environment costmap
-  std::vector<std::vector<float>> env{{0, 0, 0, 0, 0, 0}, {0, 1, 1, 0, 0, 1}, {0, 1, 1, 0, 1, 0},
-                                      {0, 0, 0, 0, 0, 0}, {1, 1, 1, 0, 1, 0}, {1, 1, 1, 0, 0, 0}};
+  // clang-format off
+  std::vector<std::vector<float>> env{
+  {0, 0, 0, 0, 0, 0}, 
+  {0, 1, 1, 0, 0, 1}, 
+  {0, 1, 1, 0, 1, 0},
+  {0, 0, 0, 0, 0, 0}, 
+  {1, 1, 1, 0, 1, 0}, 
+  {1, 1, 1, 0, 0, 0}};
+  // clang-format on
 
   CostOrError costBetween(StateQuery const &query) override {
     CostOrError cost = costOfTerrain(query);
@@ -23,7 +30,6 @@ struct SimpleCostProvider : ICostProvider {
     auto env_from = env.at(static_cast<size_t>(loc_from.y())).at(static_cast<size_t>(loc_from.x()));
     auto loc_to   = query.to.loc();
     auto env_to   = env.at(static_cast<size_t>(loc_to.y())).at(static_cast<size_t>(loc_to.x()));
-
     return Cost(env_to - env_from); // random value
   }
   [[nodiscard]] StateBounds bounds() const override {
@@ -41,7 +47,14 @@ struct SimpleCostProvider : ICostProvider {
 struct SimplePlanner : IPlanner {
   SimplePlanner() = default;
   PathOrError plan(State const &initial, TargetList const &targets) override {
-    return unexpected<Error>{Error::INTERNAL_ERROR};
+    Waypoint start;
+    start.target = initial;
+    path.path.emplace_back(start);
+    for (auto const &target : targets) {
+      // std::cout << target->heuristic(path);
+    }
+    return path;
+    // return unexpected<Error>{Error::INTERNAL_ERROR};
   }
   IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) override {
     cost_provider = provider;
@@ -51,6 +64,8 @@ struct SimplePlanner : IPlanner {
 
 private:
   std::weak_ptr<ICostProvider> cost_provider;
+
+  Path path;
 };
 
 int main() {
@@ -80,7 +95,7 @@ int main() {
   if (cost.has_value()) {
     std::cout << cost.value() << "\n";
   } else {
-    std::cout << "Sumding Wong"
+    std::cout << "Sum Ding Wong"
               << "\n";
   }
   SimplePlanner planner;
@@ -91,7 +106,7 @@ int main() {
   target_loc << 5, 5;
   PointTarget point_target(target_loc);
   targets.emplace_back(std::make_unique<PointTarget>(point_target));
-  SimplePlanner::PathOrError result = planner.plan(initial_state, targets);
+  SimplePlanner::PathOrError path = planner.plan(initial_state, targets);
   // task 2 - integrate this
   // create planner object
   // make planner plan from initial state to goal state
@@ -99,6 +114,38 @@ int main() {
 
   // task 3
   // output path and costmap to something
+  // Make a boolean map marking the points which path visits
+  auto map = cost_provider->env;
+
+  std::vector<std::vector<bool>> path_map;
+  for (auto const &i : map) {
+    path_map.push_back(std::vector<bool>());
+    for (auto const &j : i) {
+      path_map.back().emplace_back(false);
+    }
+  }
+
+  if (path.has_value()) {
+
+    for (auto wp : path.value().path) {
+      auto loc                                                                   = wp.target.loc();
+      path_map.at(static_cast<size_t>(loc.y())).at(static_cast<size_t>(loc.x())) = true;
+    }
+
+    for (size_t i = 0; i < map.size(); i++) {
+      for (size_t j = 0; j < map.at(i).size(); j++) {
+        if (path_map.at(i).at(j)) {
+          std::cout << "\033[1;31m" << map.at(i).at(j) << "\033[0m";
+        } else {
+          std::cout << map.at(i).at(j);
+        }
+      }
+      std::cout << "\n";
+    }
+  } else {
+    std::cout << "Sum Ding Wong"
+              << "\n";
+  }
 
   // task 4
   // when done, open up path in jupyter notebook

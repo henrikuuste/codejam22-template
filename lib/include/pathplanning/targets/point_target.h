@@ -25,13 +25,15 @@ struct PointTarget : public ITargetCriteria {
     return *this;
   }
 
-  Cost heuristic(Path const &path) const {
+  Cost heuristic(Path const &path) const override {
     if (path.empty())
       return Cost::UNKNOWN;
-    return agv_math::distanceBetween(path.back().target.loc(), goal);
+    return Cost(agv_math::distanceBetween(path.back().target.loc(), goal));
   };
 
   State::Distance allowed_error;
+
+private:
   Location goal;
 };
 

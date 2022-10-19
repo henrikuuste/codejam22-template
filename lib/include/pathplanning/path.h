@@ -6,6 +6,7 @@
 
 namespace pathplanning {
 struct Waypoint {
+  // TODO is target a good name?
   State target; // what defines a waypoint
 };
 

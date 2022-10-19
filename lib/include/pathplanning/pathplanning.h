@@ -24,6 +24,7 @@ struct IPlanner {
   using PathOrError = expected<Path, Error>;
 
   // Functions that must be implemented by derived class
+  // TODO Question: Why give multiple targets if output is only one path?
   virtual PathOrError plan(State const &initial, TargetList const &targets) = 0;
   virtual IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider)  = 0;
   virtual IPlanner *setTimeLimit(seconds_t limit)                           = 0;
