@@ -42,19 +42,71 @@ struct SimpleCostProvider : ICostProvider {
     return {min_state, max_state};
   }
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
+
+  // std::vector<State> get_neighbours(State current) {
+  //   std::vector<State> neighbours;
+  //   std::vector<Vec2> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
+
+  //   for (auto const &i : movement) {
+  //     State neighbour;
+  //     neighbour.setLoc(current.loc() + i);
+  //     if
+  //       neighbours.emplace_back(neighbour);
+  //   }
+
+  //   return neighbours;
+  // }
+};
+
+struct AStarPath : Path {
+  Cost f_score = Cost(std::numeric_limits<double>::max());
+  Cost g_score = Cost(std::numeric_limits<double>::max());
+  bool const operator>(const AStarPath &p) { return (f_score > p.f_score); }
+  bool const operator<(const AStarPath &p) { return (f_score < p.f_score); }
+
+  // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
+  //   std::vector<AStarPath> neighbours;
+
+  //   return neighbours;
+  // }
 };
 
 struct SimplePlanner : IPlanner {
   SimplePlanner() = default;
   PathOrError plan(State const &initial, TargetList const &targets) override {
-    Waypoint start;
-    start.target = initial;
+    spdlog::stopwatch sw;
+    // auto provider      = static_cast<SimpleCostProvider>(*cost_provider.lock());
+    auto const &target = targets.at(0);
+
+    AStarPath path;
+    Waypoint start = {initial};
     path.path.emplace_back(start);
-    for (auto const &target : targets) {
-      // std::cout << target->heuristic(path);
+    path.f_score = target->heuristic(path);
+    path.g_score = Cost(0);
+    open_set.emplace_back(path);
+    std::make_heap(open_set.begin(), open_set.end());
+    while (!open_set.empty()) {
+
+      // Choose path with lowest f score
+      auto current = open_set.back();
+      open_set.pop_back();
+      // Check time limit
+      if (sw.elapsed().count() > time_limit) {
+        return current;
+      }
+      // Check if goal
+      if (target->fitness(current)) {
+        return current;
+      }
+
+      // auto neighbours = provider.ge
+      // Expand
     }
-    return path;
-    // return unexpected<Error>{Error::INTERNAL_ERROR};
+    // for (auto const &target : targets) {
+    //   // std::cout << target->heuristic(path);
+    // }
+
+    return unexpected<Error>{Error::INTERNAL_ERROR};
   }
   IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) override {
     cost_provider = provider;
@@ -65,7 +117,8 @@ struct SimplePlanner : IPlanner {
 private:
   std::weak_ptr<ICostProvider> cost_provider;
 
-  Path path;
+  std::vector<AStarPath> open_set;
+  seconds_t time_limit = 1;
 };
 
 int main() {
@@ -98,6 +151,11 @@ int main() {
     std::cout << "Sum Ding Wong"
               << "\n";
   }
+
+  // task 2 - integrate this
+  // create planner object
+  // make planner plan from initial state to goal state
+  // planner.plan(costProvider, initialState, targetState)
   SimplePlanner planner;
 
   planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
@@ -105,13 +163,11 @@ int main() {
   Vec2 target_loc(5, 5);
   target_loc << 5, 5;
   PointTarget point_target(target_loc);
+  State::Distance allowed_error;
+  allowed_error.loc_distance = Vec2(0.5, 0.5);
+  point_target.setAllowedError(allowed_error);
   targets.emplace_back(std::make_unique<PointTarget>(point_target));
   SimplePlanner::PathOrError path = planner.plan(initial_state, targets);
-  // task 2 - integrate this
-  // create planner object
-  // make planner plan from initial state to goal state
-  // planner.plan(costProvider, initialState, targetState)
-
   // task 3
   // output path and costmap to something
   // Make a boolean map marking the points which path visits
@@ -127,7 +183,7 @@ int main() {
 
   if (path.has_value()) {
 
-    for (auto wp : path.value().path) {
+    for (auto const &wp : path.value().path) {
       auto loc                                                                   = wp.target.loc();
       path_map.at(static_cast<size_t>(loc.y())).at(static_cast<size_t>(loc.x())) = true;
     }

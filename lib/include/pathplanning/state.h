@@ -53,6 +53,10 @@ struct State {
   // TODO fix shitty getters and setters
   StateVector getState() const { return data_; }
   void setStateElement(Real value, Index idx) { data_(idx) = value; }
+  void setLoc(Location loc) {
+    data_(0) = loc.x();
+    data_(1) = loc.y();
+  }
 
 private:
   StateVector data_;

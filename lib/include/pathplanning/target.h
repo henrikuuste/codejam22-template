@@ -10,7 +10,7 @@
 namespace pathplanning {
 
 struct ITargetCriteria {
-  using Fitness              = float; // TODO should this be == Cost?
+  using Fitness              = bool; // TODO should this be == Cost?
   virtual ~ITargetCriteria() = default;
 
   /**

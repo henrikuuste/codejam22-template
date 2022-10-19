@@ -19,7 +19,10 @@ struct Cost {
 
   Cost &operator+=(Cost const &other);
   Cost &operator+=(CostValue const &other);
-  auto operator<=>(Cost const &other);
+  // auto operator<=>(Cost const &other);
+  bool const operator<(Cost const &other) { return value_ < other.value_; }
+  bool const operator>(Cost const &other) { return value_ > other.value_; }
+  bool const operator=(Cost const &other) { return value_ == other.value_; }
 
   friend Cost operator+(Cost const &lhs, Cost const &rhs);
   friend Cost operator+(Cost const &lhs, CostValue const &rhs);
