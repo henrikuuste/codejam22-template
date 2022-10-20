@@ -10,7 +10,7 @@ struct SimpleCostProvider : ICostProvider {
   // task1
   // create and store environment costmap
   // clang-format off
-  std::vector<std::vector<float>> env{
+  Eigen::MatrixXf env{
   {0, 0, 0, 0, 0, 0}, 
   {0, 1, 1, 0, 0, 1}, 
   {0, 1, 1, 0, 1, 0},
@@ -27,9 +27,9 @@ struct SimpleCostProvider : ICostProvider {
   CostOrError costOfEnvTraversal(StateQuery const &query) override { return INTERNAL_ERROR; }
   CostOrError costOfTerrain(StateQuery const &query) override {
     auto loc_from = query.from.loc();
-    auto env_from = env.at(static_cast<size_t>(loc_from.y())).at(static_cast<size_t>(loc_from.x()));
+    auto env_from = env(static_cast<size_t>(loc_from.y()), (static_cast<size_t>(loc_from.x())));
     auto loc_to   = query.to.loc();
-    auto env_to   = env.at(static_cast<size_t>(loc_to.y())).at(static_cast<size_t>(loc_to.x()));
+    auto env_to   = env(static_cast<size_t>(loc_to.y()), static_cast<size_t>(loc_to.x()));
     return Cost(env_to - env_from); // random value
   }
   [[nodiscard]] StateBounds bounds() const override {
@@ -86,7 +86,7 @@ struct SimplePlanner : IPlanner {
     open_set.emplace_back(path);
     std::make_heap(open_set.begin(), open_set.end());
     while (!open_set.empty()) {
-
+      return path;
       // Choose path with lowest f score
       auto current = open_set.back();
       open_set.pop_back();
@@ -173,27 +173,28 @@ int main() {
   // Make a boolean map marking the points which path visits
   auto map = cost_provider->env;
 
-  std::vector<std::vector<bool>> path_map;
-  for (auto const &i : map) {
-    path_map.push_back(std::vector<bool>());
-    for (auto const &j : i) {
-      path_map.back().emplace_back(false);
+  Eigen::MatrixXi path_map(2, 2);
+  path_map.resize(map.rows(), map.cols());
+
+  for (auto i = 0; i < map.rows(); i++) {
+    for (auto j = 0; j < map.cols(); j++) {
+      path_map(i, j) = 0;
     }
   }
 
   if (path.has_value()) {
 
     for (auto const &wp : path.value().path) {
-      auto loc                                                                   = wp.target.loc();
-      path_map.at(static_cast<size_t>(loc.y())).at(static_cast<size_t>(loc.x())) = true;
+      auto loc                                                             = wp.target.loc();
+      path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
     }
 
-    for (size_t i = 0; i < map.size(); i++) {
-      for (size_t j = 0; j < map.at(i).size(); j++) {
-        if (path_map.at(i).at(j)) {
-          std::cout << "\033[1;31m" << map.at(i).at(j) << "\033[0m";
+    for (size_t i = 0; i < map.rows(); i++) {
+      for (size_t j = 0; j < map.cols(); j++) {
+        if (path_map(i, j)) {
+          std::cout << "\033[1;31m" << map(i, j) << "\033[0m";
         } else {
-          std::cout << map.at(i).at(j);
+          std::cout << map(i, j);
         }
       }
       std::cout << "\n";
