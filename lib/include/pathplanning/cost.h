@@ -16,23 +16,33 @@ struct Cost {
 
   Cost() {}
   Cost(CostValue const &value) : value_(value) {}
+  Cost(CostValue const &value, Classifier type) : value_(value), type_(type) {}
 
   Cost &operator+=(Cost const &other);
-  Cost &operator+=(CostValue const &other);
+  Cost &operator+=(CostValue const &other) {
+    Cost c;
+    c.type_ = this->type_;
+
+    c.value_ = this->value_ + other;
+
+    return c;
+  }
   // auto operator<=>(Cost const &other);
-  bool const operator<(Cost const &other) { return value_ < other.value_; }
-  bool const operator>(Cost const &other) { return value_ > other.value_; }
-  bool const operator=(Cost const &other) { return value_ == other.value_; }
+  bool const operator<(Cost const &other) const { return value_ < other.value_; }
+  bool const operator>(Cost const &other) const { return value_ > other.value_; }
+  bool const operator==(Cost const &other) const { return value_ == other.value_; }
 
   friend Cost operator+(Cost const &lhs, Cost const &rhs);
   friend Cost operator+(Cost const &lhs, CostValue const &rhs);
   friend std::ostream &operator<<(std::ostream &out, const Cost &c) {
-    out << "Cost: " << c.value_ << "\n";
+    out << "Cost:  " << c.value_ << "\n";
     return out;
   }
 
+  Classifier getType() { return type_; }
+
 private:
-  Classifier type_;
+  Classifier type_ = NORMAL;
   CostValue value_;
 };
 

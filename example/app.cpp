@@ -21,7 +21,7 @@ struct SimpleCostProvider : ICostProvider {
 
   CostOrError costBetween(StateQuery const &query) override {
     if (isOutOfBounds(query)) {
-      return Cost::UNKNOWN;
+      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
     }
 
     CostOrError cost = costOfTerrain(query);
@@ -88,7 +88,7 @@ struct SimplePlanner : IPlanner {
   SimplePlanner() = default;
   PathOrError plan(State const &initial, TargetList const &targets) override {
     spdlog::stopwatch sw;
-    // auto provider      = static_cast<SimpleCostProvider>(*cost_provider.lock());
+    auto provider      = std::static_pointer_cast<SimpleCostProvider>(cost_provider.lock());
     auto const &target = targets.at(0);
 
     AStarPath path;
@@ -99,7 +99,6 @@ struct SimplePlanner : IPlanner {
     open_set.emplace_back(path);
     std::make_heap(open_set.begin(), open_set.end());
     while (!open_set.empty()) {
-      return path;
       // Choose path with lowest f score
       auto current = open_set.back();
       open_set.pop_back();
@@ -111,6 +110,30 @@ struct SimplePlanner : IPlanner {
       if (target->fitness(current)) {
         return current;
       }
+
+      // TODO move get_neighbours in some function somewhere
+      // std::vector<State> neighbours;
+      const std::array<Vec2, 4> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
+      State current_state = current.back().target;
+      for (auto const &i : movement) {
+        State neighbour;
+        neighbour.setLoc(current_state.loc() + i);
+        auto cost = provider->costBetween(StateQuery(current_state, neighbour));
+        if (cost.has_value()) {
+          if (cost.value().getType() != Cost::UNKNOWN) {
+            AStarPath new_path = path;
+            Waypoint wp;
+            wp.target = neighbour;
+            new_path.path.emplace_back(wp);
+            new_path.g_score +=
+                Cost(agv_math::distanceBetween(current_state.loc(), neighbour.loc()));
+            new_path.f_score = new_path.g_score + target->heuristic(new_path);
+
+            open_set.push_back(new_path);
+          }
+        }
+      }
+      std::push_heap(open_set.begin(), open_set.end());
 
       // auto neighbours = provider.ge
       // Expand
