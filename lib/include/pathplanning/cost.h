@@ -18,7 +18,15 @@ struct Cost {
   Cost(CostValue const &value) : value_(value) {}
   Cost(CostValue const &value, Classifier type) : value_(value), type_(type) {}
 
-  Cost &operator+=(Cost const &other);
+  Cost &operator+=(Cost const &other) {
+    Cost c;
+    // TODO how to add types?
+    c.type_ = this->type_;
+
+    c.value_ = this->value_ + other.value_;
+
+    return c;
+  }
   Cost &operator+=(CostValue const &other) {
     Cost c;
     c.type_ = this->type_;

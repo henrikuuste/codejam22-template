@@ -125,9 +125,10 @@ struct SimplePlanner : IPlanner {
             Waypoint wp;
             wp.target = neighbour;
             new_path.path.emplace_back(wp);
-            new_path.g_score +=
-                Cost(agv_math::distanceBetween(current_state.loc(), neighbour.loc()));
-            new_path.f_score = new_path.g_score + target->heuristic(new_path);
+            new_path.g_score += agv_math::distanceBetween(current_state.loc(), neighbour.loc());
+            new_path.f_score = new_path.g_score;
+
+            new_path.f_score += target->heuristic(new_path);
 
             open_set.push_back(new_path);
           }
