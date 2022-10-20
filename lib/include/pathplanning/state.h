@@ -50,6 +50,15 @@ struct State {
   friend State operator-(State const &lhs, StateDifference const &rhs);
   friend StateDifference operator-(State const &lhs, State const &rhs);
 
+  // TODO how to override comparison? should we even override comparison?
+  // TODO this is stupid but needed for state bounds comparison
+  bool const operator<(State const &other) const {
+    return loc().x() < other.loc().x() || loc().y() < other.loc().y();
+  }
+  bool const operator>(State const &other) const {
+    return loc().x() > other.loc().x() || loc().y() > other.loc().y();
+  }
+
   // TODO fix shitty getters and setters
   StateVector getState() const { return data_; }
   void setStateElement(Real value, Index idx) { data_(idx) = value; }
@@ -85,8 +94,8 @@ struct StateQuery {
 struct StateBounds {
   StateBounds(State const &min, State const &max) : _min(min), _max(max){};
   StateBounds(State const &center, StateDifference const &halfSize);
-  State const &min() const;
-  State const &max() const;
+  State const &min() const { return _min; }
+  State const &max() const { return _max; }
   State center() const;
   StateDifference fullSize() const;
   StateDifference halfSize() const;

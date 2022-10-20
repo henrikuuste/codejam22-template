@@ -20,6 +20,10 @@ struct SimpleCostProvider : ICostProvider {
   // clang-format on
 
   CostOrError costBetween(StateQuery const &query) override {
+    if (isOutOfBounds(query)) {
+      return Cost::UNKNOWN;
+    }
+
     CostOrError cost = costOfTerrain(query);
     return cost;
   }
@@ -41,6 +45,15 @@ struct SimpleCostProvider : ICostProvider {
     max_state.setStateElement(5, 1);
     return {min_state, max_state};
   }
+
+  bool isOutOfBounds(StateQuery const &query) {
+    auto state_bounds = bounds();
+    if (query.to > state_bounds.max() || query.to < state_bounds.min()) {
+      return true;
+    }
+    return false;
+  }
+
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 
   // std::vector<State> get_neighbours(State current) {
