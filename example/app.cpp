@@ -106,7 +106,6 @@ struct SimplePlanner : IPlanner {
       // Choose path with lowest f score
       auto current = open_set.top();
       open_set.pop();
-      // std::cout << current.back().target.loc().transpose() << " " << open_set.size() << "\n";
       // Check time limit
       if (sw.elapsed().count() > time_limit) {
         return current;
@@ -116,8 +115,7 @@ struct SimplePlanner : IPlanner {
         return current;
       }
 
-      // TODO move get_neighbours in some function somewhere
-      // std::vector<State> neighbours;
+      // TODO break this into pieces
       const std::array<Vec2, 4> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
       State current_state = current.back().target;
       for (auto const &i : movement) {
@@ -130,23 +128,15 @@ struct SimplePlanner : IPlanner {
             Waypoint wp;
             wp.target = neighbour;
             new_path.path.emplace_back(wp);
-            // std::cout << current_state.loc().transpose() << ", " << neighbour.loc().transpose()
-            //           << "\n";
+
             new_path.g_score = new_path.g_score + cost.value();
-            // agv_math::distanceBetween(current_state.loc(), neighbour.loc());
             new_path.f_score = new_path.g_score;
-            // std::cout << target->heuristic(new_path) << "\n";
             new_path.f_score = new_path.f_score + target->heuristic(new_path);
-            // std::cout << new_path.back().target.loc().transpose() << " " << new_path.f_score
-            //           << "\n";
 
             open_set.push(new_path);
           }
         }
       }
-
-      // auto neighbours = provider.ge
-      // Expand
     }
     // for (auto const &target : targets) {
     //   // std::cout << target->heuristic(path);
@@ -234,8 +224,7 @@ int main() {
   if (path.has_value()) {
 
     for (auto const &wp : path.value().path) {
-      auto loc = wp.target.loc();
-      std::cout << loc.transpose() << "\n";
+      auto loc                                                             = wp.target.loc();
       path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
     }
 
