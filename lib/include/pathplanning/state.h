@@ -29,7 +29,7 @@ struct State {
   using StateVector = Vec<StateDim>;
   // NOTE essentially moving towards IndexedVector from ukf++
   // Is this really necessary in this codebase to do state access really really fast
-  Location &loc() const {
+  Location loc() const {
     Location _loc = data_.head(2);
     return _loc;
   }
@@ -89,6 +89,10 @@ struct StateQuery {
   State from;
   State to;
   StateQuery(State const &from_, State const &to_) : from(from_), to(to_){};
+  friend std::ostream &operator<<(std::ostream &out, const StateQuery &q) {
+    out << "Querying from:  " << q.from.loc().x() << " to " << q.to.loc() << "\n";
+    return out;
+  }
 };
 
 struct StateBounds {

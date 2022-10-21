@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/stopwatch.h>
 #include <array>
+#include <queue>
 using namespace pathplanning;
 
 struct SimpleCostProvider : ICostProvider {
@@ -12,15 +13,17 @@ struct SimpleCostProvider : ICostProvider {
   // clang-format off
   Eigen::MatrixXf env{
   {0, 0, 0, 0, 0, 0}, 
-  {0, 1, 1, 0, 0, 1}, 
-  {0, 1, 1, 0, 1, 0},
+  {0, 1, 0, 1, 0, 1}, 
+  {0, 1, 0, 0, 1, 0},
   {0, 0, 0, 0, 0, 0}, 
-  {1, 1, 1, 0, 1, 0}, 
-  {1, 1, 1, 0, 0, 0}};
+  {1, 0, 1, 0, 1, 0}, 
+  {1, 1, 0, 0, 0, 0}};
   // clang-format on
 
   CostOrError costBetween(StateQuery const &query) override {
+    // std::cout << query << "\n";
     if (isOutOfBounds(query)) {
+      // std::cout << "Out of bounds\n";
       return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
     }
 
@@ -31,9 +34,9 @@ struct SimpleCostProvider : ICostProvider {
   CostOrError costOfEnvTraversal(StateQuery const &query) override { return INTERNAL_ERROR; }
   CostOrError costOfTerrain(StateQuery const &query) override {
     auto loc_from = query.from.loc();
-    auto env_from = env(static_cast<size_t>(loc_from.y()), (static_cast<size_t>(loc_from.x())));
+    auto env_from = env(static_cast<long>(loc_from.y()), (static_cast<long>(loc_from.x())));
     auto loc_to   = query.to.loc();
-    auto env_to   = env(static_cast<size_t>(loc_to.y()), static_cast<size_t>(loc_to.x()));
+    auto env_to   = env(static_cast<long>(loc_to.y()), static_cast<long>(loc_to.x()));
     return Cost(env_to - env_from); // random value
   }
   [[nodiscard]] StateBounds bounds() const override {
@@ -46,12 +49,9 @@ struct SimpleCostProvider : ICostProvider {
     return {min_state, max_state};
   }
 
-  bool isOutOfBounds(StateQuery const &query) {
+  bool isOutOfBounds(StateQuery const &query) const {
     auto state_bounds = bounds();
-    if (query.to > state_bounds.max() || query.to < state_bounds.min()) {
-      return true;
-    }
-    return false;
+    return (query.to > state_bounds.max() || query.to < state_bounds.min());
   }
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
@@ -84,6 +84,11 @@ struct AStarPath : Path {
   // }
 };
 
+class AStarPathComparator {
+public:
+  int operator()(const AStarPath &p1, const AStarPath &p2) { return p1.f_score > p2.f_score; }
+};
+
 struct SimplePlanner : IPlanner {
   SimplePlanner() = default;
   PathOrError plan(State const &initial, TargetList const &targets) override {
@@ -96,12 +101,12 @@ struct SimplePlanner : IPlanner {
     path.path.emplace_back(start);
     path.f_score = target->heuristic(path);
     path.g_score = Cost(0);
-    open_set.emplace_back(path);
-    std::make_heap(open_set.begin(), open_set.end());
+    open_set.push(path);
     while (!open_set.empty()) {
       // Choose path with lowest f score
-      auto current = open_set.back();
-      open_set.pop_back();
+      auto current = open_set.top();
+      open_set.pop();
+      // std::cout << current.back().target.loc().transpose() << " " << open_set.size() << "\n";
       // Check time limit
       if (sw.elapsed().count() > time_limit) {
         return current;
@@ -121,20 +126,24 @@ struct SimplePlanner : IPlanner {
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
           if (cost.value().getType() != Cost::UNKNOWN) {
-            AStarPath new_path = path;
+            AStarPath new_path = current;
             Waypoint wp;
             wp.target = neighbour;
             new_path.path.emplace_back(wp);
-            new_path.g_score += agv_math::distanceBetween(current_state.loc(), neighbour.loc());
+            // std::cout << current_state.loc().transpose() << ", " << neighbour.loc().transpose()
+            //           << "\n";
+            new_path.g_score = new_path.g_score + cost.value();
+            // agv_math::distanceBetween(current_state.loc(), neighbour.loc());
             new_path.f_score = new_path.g_score;
+            // std::cout << target->heuristic(new_path) << "\n";
+            new_path.f_score = new_path.f_score + target->heuristic(new_path);
+            // std::cout << new_path.back().target.loc().transpose() << " " << new_path.f_score
+            //           << "\n";
 
-            new_path.f_score += target->heuristic(new_path);
-
-            open_set.push_back(new_path);
+            open_set.push(new_path);
           }
         }
       }
-      std::push_heap(open_set.begin(), open_set.end());
 
       // auto neighbours = provider.ge
       // Expand
@@ -149,12 +158,15 @@ struct SimplePlanner : IPlanner {
     cost_provider = provider;
     return this;
   }
-  IPlanner *setTimeLimit(seconds_t limit) override { return this; }
+  IPlanner *setTimeLimit(seconds_t limit) override {
+    time_limit = limit;
+    return this;
+  }
 
 private:
   std::weak_ptr<ICostProvider> cost_provider;
 
-  std::vector<AStarPath> open_set;
+  std::priority_queue<AStarPath, std::vector<AStarPath>, AStarPathComparator> open_set;
   seconds_t time_limit = 1;
 };
 
@@ -181,20 +193,20 @@ int main() {
 
   auto cost_provider = std::make_shared<SimpleCostProvider>();
 
-  SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state, goal_state});
-  if (cost.has_value()) {
-    std::cout << cost.value() << "\n";
-  } else {
-    std::cout << "Sum Ding Wong"
-              << "\n";
-  }
+  // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state, goal_state});
+  // if (cost.has_value()) {
+  //   std::cout << cost.value() << "\n";
+  // } else {
+  //   std::cout << "Sum Ding Wong"
+  //             << "\n";
+  // }
 
   // task 2 - integrate this
   // create planner object
   // make planner plan from initial state to goal state
   // planner.plan(costProvider, initialState, targetState)
   SimplePlanner planner;
-
+  planner.setTimeLimit(5);
   planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
   TargetList targets;
   Vec2 target_loc(5, 5);
@@ -222,7 +234,8 @@ int main() {
   if (path.has_value()) {
 
     for (auto const &wp : path.value().path) {
-      auto loc                                                             = wp.target.loc();
+      auto loc = wp.target.loc();
+      std::cout << loc.transpose() << "\n";
       path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
     }
 

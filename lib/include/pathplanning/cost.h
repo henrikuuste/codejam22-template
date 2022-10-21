@@ -40,8 +40,22 @@ struct Cost {
   bool const operator>(Cost const &other) const { return value_ > other.value_; }
   bool const operator==(Cost const &other) const { return value_ == other.value_; }
 
-  friend Cost operator+(Cost const &lhs, Cost const &rhs);
-  friend Cost operator+(Cost const &lhs, CostValue const &rhs);
+  friend Cost operator+(Cost const &lhs, Cost const &rhs) {
+    Cost c;
+    c.type_ = lhs.type_;
+
+    c.value_ = lhs.value_ + rhs.value_;
+
+    return c;
+  }
+  friend Cost operator+(Cost const &lhs, CostValue const &rhs) {
+    Cost c;
+    c.type_ = lhs.type_;
+
+    c.value_ = lhs.value_ + rhs;
+
+    return c;
+  }
   friend std::ostream &operator<<(std::ostream &out, const Cost &c) {
     out << "Cost:  " << c.value_ << "\n";
     return out;
