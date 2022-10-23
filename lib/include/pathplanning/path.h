@@ -17,5 +17,7 @@ struct Path {
 
   bool empty() const { return path.empty(); };
   Waypoint back() const { return path.back(); };
+
+  // Add function for checking if waypoint on path 
 };
 } // namespace pathplanning

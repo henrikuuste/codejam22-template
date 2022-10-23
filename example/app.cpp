@@ -1,23 +1,51 @@
 #include "config.h"
+#include <array>
 #include <iostream>
 #include <pathplanning/pathplanning.h>
+#include <queue>
 #include <spdlog/spdlog.h>
 #include <spdlog/stopwatch.h>
-#include <array>
-#include <queue>
 using namespace pathplanning;
+
+void draw_path(const Eigen::MatrixXf map, const Path path) {
+  // Create a binary matrix showing where the path is
+  Eigen::MatrixXi path_map(2, 2);
+  path_map.resize(map.rows(), map.cols());
+  for (auto i = 0; i < map.rows(); i++) {
+    for (auto j = 0; j < map.cols(); j++) {
+      path_map(i, j) = 0;
+    }
+  }
+
+  for (auto const &wp : path.path) {
+    auto loc                                                             = wp.target.loc();
+    path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
+  }
+
+  for (long i = 0; i < map.rows(); i++) {
+    for (long j = 0; j < map.cols(); j++) {
+      if (path_map(i, j)) {
+        // If point on path, mark it with red
+        std::cout << "\033[1;31m" << map(i, j) << "\033[0m";
+      } else {
+        std::cout << map(i, j);
+      }
+    }
+    std::cout << "\n";
+  }
+}
 
 struct SimpleCostProvider : ICostProvider {
   // task1
   // create and store environment costmap
   // clang-format off
   Eigen::MatrixXf env{
-  {0, 0, 0, 0, 0, 0}, 
-  {0, 1, 0, 1, 0, 1}, 
-  {0, 1, 0, 0, 1, 0},
-  {0, 0, 0, 0, 0, 0}, 
-  {1, 0, 1, 0, 1, 0}, 
-  {1, 1, 0, 0, 0, 0}};
+  {1, 9, 1, 1, 1, 1}, 
+  {1, 1, 1, 1, 1, 1}, 
+  {1, 9, 9, 9, 9, 1},
+  {1, 1, 1, 1, 1, 1}, 
+  {1, 9, 9, 9, 9, 9}, 
+  {1, 1, 1, 1, 1, 1}};
   // clang-format on
 
   CostOrError costBetween(StateQuery const &query) override {
@@ -49,26 +77,12 @@ struct SimpleCostProvider : ICostProvider {
     return {min_state, max_state};
   }
 
-  bool isOutOfBounds(StateQuery const &query) const {
+  [[nodiscard]] bool isOutOfBounds(StateQuery const &query) const {
     auto state_bounds = bounds();
     return (query.to > state_bounds.max() || query.to < state_bounds.min());
   }
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
-
-  // std::vector<State> get_neighbours(State current) {
-  //   std::vector<State> neighbours;
-  //   std::vector<Vec2> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
-
-  //   for (auto const &i : movement) {
-  //     State neighbour;
-  //     neighbour.setLoc(current.loc() + i);
-  //     if
-  //       neighbours.emplace_back(neighbour);
-  //   }
-
-  //   return neighbours;
-  // }
 };
 
 struct AStarPath : Path {
@@ -77,11 +91,15 @@ struct AStarPath : Path {
   bool const operator>(const AStarPath &p) { return (f_score > p.f_score); }
   bool const operator<(const AStarPath &p) { return (f_score < p.f_score); }
 
-  // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
-  //   std::vector<AStarPath> neighbours;
-
-  //   return neighbours;
-  // }
+  bool is_point_on_path(State point) { // Maybe waypoint better?
+    // Reverse loop for efficiency
+    for (auto wp = path.rbegin(); wp != path.rend(); ++wp) {
+      if (wp->target.loc()[0] == point.loc()[0] && wp->target.loc()[1] == point.loc()[1]) {
+        return true;
+      }
+    }
+    return false;
+  }
 };
 
 class AStarPathComparator {
@@ -106,8 +124,12 @@ struct SimplePlanner : IPlanner {
       // Choose path with lowest f score
       auto current = open_set.top();
       open_set.pop();
+      std::cout << "Current path:\n";
+      draw_path(provider->env, current);
+      std::cout << std::endl;
       // Check time limit
       if (sw.elapsed().count() > time_limit) {
+        std::cout << "Time limit reached" << std::endl;
         return current;
       }
       // Check if goal
@@ -116,11 +138,16 @@ struct SimplePlanner : IPlanner {
       }
 
       // TODO break this into pieces
-      const std::array<Vec2, 4> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
+      const std::array<Vec2, 4> movement{Vec2(-1, 0), Vec2(0, -1), Vec2(1, 0), Vec2(0, 1)};
       State current_state = current.back().target;
+      auto loc            = current_state.getState();
       for (auto const &i : movement) {
         State neighbour;
         neighbour.setLoc(current_state.loc() + i);
+        // Checking whether point already exists in path
+        if (current.is_point_on_path(neighbour)) {
+          continue;
+        }
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
           if (cost.value().getType() != Cost::UNKNOWN) {
@@ -138,10 +165,6 @@ struct SimplePlanner : IPlanner {
         }
       }
     }
-    // for (auto const &target : targets) {
-    //   // std::cout << target->heuristic(path);
-    // }
-
     return unexpected<Error>{Error::INTERNAL_ERROR};
   }
   IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) override {
@@ -196,7 +219,7 @@ int main() {
   // make planner plan from initial state to goal state
   // planner.plan(costProvider, initialState, targetState)
   SimplePlanner planner;
-  planner.setTimeLimit(5);
+  planner.setTimeLimit(100);
   planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
   TargetList targets;
   Vec2 target_loc(5, 5);
@@ -212,32 +235,8 @@ int main() {
   // Make a boolean map marking the points which path visits
   auto map = cost_provider->env;
 
-  Eigen::MatrixXi path_map(2, 2);
-  path_map.resize(map.rows(), map.cols());
-
-  for (auto i = 0; i < map.rows(); i++) {
-    for (auto j = 0; j < map.cols(); j++) {
-      path_map(i, j) = 0;
-    }
-  }
-
   if (path.has_value()) {
-
-    for (auto const &wp : path.value().path) {
-      auto loc                                                             = wp.target.loc();
-      path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
-    }
-
-    for (size_t i = 0; i < map.rows(); i++) {
-      for (size_t j = 0; j < map.cols(); j++) {
-        if (path_map(i, j)) {
-          std::cout << "\033[1;31m" << map(i, j) << "\033[0m";
-        } else {
-          std::cout << map(i, j);
-        }
-      }
-      std::cout << "\n";
-    }
+    draw_path(map, path.value());
   } else {
     std::cout << "Sum Ding Wong"
               << "\n";
