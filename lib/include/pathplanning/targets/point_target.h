@@ -13,7 +13,7 @@ struct PointTarget : public ITargetCriteria {
 
   Fitness fitness(Path const &path) const override {
     if (path.empty())
-      return false;
+      return 0.f;
     // TODO think about this
     Vec2 diff = (goal - path.back().target.loc()).cwiseAbs();
     return (diff.x() <= allowed_error.loc_distance.x()) &&

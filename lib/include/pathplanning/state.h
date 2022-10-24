@@ -52,10 +52,10 @@ struct State {
 
   // TODO how to override comparison? should we even override comparison?
   // TODO this is stupid but needed for state bounds comparison
-  bool const operator<(State const &other) const {
+  bool operator<(State const &other) const {
     return loc().x() < other.loc().x() || loc().y() < other.loc().y();
   }
-  bool const operator>(State const &other) const {
+  bool operator>(State const &other) const {
     return loc().x() > other.loc().x() || loc().y() > other.loc().y();
   }
 

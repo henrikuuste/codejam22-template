@@ -16,31 +16,17 @@ struct Cost {
 
   Cost() {}
   Cost(CostValue const &value) : value_(value) {}
-  Cost(CostValue const &value, Classifier type) : value_(value), type_(type) {}
+  Cost(CostValue const &value, Classifier type) : type_(type), value_(value) {}
 
-  Cost &operator+=(Cost const &other) {
-    Cost c;
-    // TODO how to add types?
-    c.type_ = this->type_;
-
-    c.value_ = this->value_ + other.value_;
-
-    return c;
-  }
-  Cost &operator+=(CostValue const &other) {
-    Cost c;
-    c.type_ = this->type_;
-
-    c.value_ = this->value_ + other;
-
-    return c;
-  }
+  Cost &operator+=(Cost const &other);
+  Cost &operator+=(CostValue const &other);
   // auto operator<=>(Cost const &other);
-  bool const operator<(Cost const &other) const { return value_ < other.value_; }
-  bool const operator>(Cost const &other) const { return value_ > other.value_; }
-  bool const operator==(Cost const &other) const { return value_ == other.value_; }
+  bool operator<(Cost const &other) const { return value_ < other.value_; }
+  bool operator>(Cost const &other) const { return value_ > other.value_; }
+  bool operator==(Cost const &other) const { return value_ == other.value_; }
 
   friend Cost operator+(Cost const &lhs, Cost const &rhs) {
+    // TODO how to add types?
     Cost c;
     c.type_ = lhs.type_;
 

@@ -11,7 +11,7 @@ struct SimpleCostProvider : ICostProvider {
   // task1
   // create and store environment costmap
   // clang-format off
-  Eigen::MatrixXf env{
+  Eigen::MatrixXd env{
   {0, 0, 0, 0, 0, 0}, 
   {0, 1, 0, 1, 0, 1}, 
   {0, 1, 0, 0, 1, 0},
@@ -30,8 +30,12 @@ struct SimpleCostProvider : ICostProvider {
     CostOrError cost = costOfTerrain(query);
     return cost;
   }
-  CostOrError costOfStateChange(StateQuery const &query) override { return INTERNAL_ERROR; }
-  CostOrError costOfEnvTraversal(StateQuery const &query) override { return INTERNAL_ERROR; }
+  CostOrError costOfStateChange([[maybe_unused]] StateQuery const &query) override {
+    return INTERNAL_ERROR;
+  }
+  CostOrError costOfEnvTraversal([[maybe_unused]] StateQuery const &query) override {
+    return INTERNAL_ERROR;
+  }
   CostOrError costOfTerrain(StateQuery const &query) override {
     auto loc_from = query.from.loc();
     auto env_from = env(static_cast<long>(loc_from.y()), (static_cast<long>(loc_from.x())));
@@ -74,8 +78,8 @@ struct SimpleCostProvider : ICostProvider {
 struct AStarPath : Path {
   Cost f_score = Cost(std::numeric_limits<double>::max());
   Cost g_score = Cost(std::numeric_limits<double>::max());
-  bool const operator>(const AStarPath &p) { return (f_score > p.f_score); }
-  bool const operator<(const AStarPath &p) { return (f_score < p.f_score); }
+  bool operator>(const AStarPath &p) const { return (f_score > p.f_score); }
+  bool operator<(const AStarPath &p) const { return (f_score < p.f_score); }
 
   // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
   //   std::vector<AStarPath> neighbours;
@@ -86,7 +90,7 @@ struct AStarPath : Path {
 
 class AStarPathComparator {
 public:
-  int operator()(const AStarPath &p1, const AStarPath &p2) { return p1.f_score > p2.f_score; }
+  int operator()(const AStarPath &p1, const AStarPath &p2) const { return p1.f_score > p2.f_score; }
 };
 
 struct SimplePlanner : IPlanner {
@@ -111,7 +115,7 @@ struct SimplePlanner : IPlanner {
         return current;
       }
       // Check if goal
-      if (target->fitness(current)) {
+      if (target->satisfiesCriteria(current)) {
         return current;
       }
 
@@ -224,12 +228,12 @@ int main() {
   if (path.has_value()) {
 
     for (auto const &wp : path.value().path) {
-      auto loc                                                             = wp.target.loc();
-      path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
+      auto loc = wp.target.loc();
+      path_map(static_cast<Eigen::Index>(loc.y()), static_cast<Eigen::Index>(loc.x())) = 1;
     }
 
-    for (size_t i = 0; i < map.rows(); i++) {
-      for (size_t j = 0; j < map.cols(); j++) {
+    for (auto i = 0; i < map.rows(); i++) {
+      for (auto j = 0; j < map.cols(); j++) {
         if (path_map(i, j)) {
           std::cout << "\033[1;31m" << map(i, j) << "\033[0m";
         } else {
