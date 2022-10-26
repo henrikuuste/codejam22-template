@@ -1,5 +1,6 @@
 #include "config.h"
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <pathplanning/pathplanning.h>
 #include <queue>
@@ -16,12 +17,10 @@ void draw_path(const Eigen::MatrixXf map, const Path path) {
       path_map(i, j) = 0;
     }
   }
-
   for (auto const &wp : path.path) {
     auto loc                                                             = wp.target.loc();
     path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
   }
-
   for (long i = 0; i < map.rows(); i++) {
     for (long j = 0; j < map.cols(); j++) {
       if (path_map(i, j)) {
@@ -32,6 +31,26 @@ void draw_path(const Eigen::MatrixXf map, const Path path) {
       }
     }
     std::cout << "\n";
+  }
+}
+
+// First row of the output csv will contain the coordinates of the waypoints making up the path
+// Next rows will contain the map
+void export_to_csv(const Eigen::MatrixXf map, const Path path) {
+  std::cout << "Exporting\n";
+  std::ofstream f;
+  f.open("output.csv");
+
+  for (auto const &wp : path.path) {
+    auto loc = wp.target.loc();
+    f << loc.x() << "-" << loc.y() << ",";
+  }
+  f << "\n";
+  for (long i = 0; i < map.rows(); i++) {
+    for (long j = 0; j < map.cols(); j++) {
+      f << map(i, j) << ",";
+    }
+    f << "\n";
   }
 }
 
@@ -124,9 +143,9 @@ struct SimplePlanner : IPlanner {
       // Choose path with lowest f score
       auto current = open_set.top();
       open_set.pop();
-      std::cout << "Current path:\n";
-      draw_path(provider->env, current);
-      std::cout << std::endl;
+      // std::cout << "Current path:\n";
+      // draw_path(provider->env, current);
+      // std::cout << std::endl;
       // Check time limit
       if (sw.elapsed().count() > time_limit) {
         std::cout << "Time limit reached" << std::endl;
@@ -237,6 +256,7 @@ int main() {
 
   if (path.has_value()) {
     draw_path(map, path.value());
+    export_to_csv(map, path.value());
   } else {
     std::cout << "Sum Ding Wong"
               << "\n";
