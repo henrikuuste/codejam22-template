@@ -27,22 +27,22 @@ struct SimpleCostProvider : ICostProvider {
       return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
     }
 
-    CostOrError cost = costOfTerrain(query);
+    CostOrError cost = costOfEnvTraversal(query);
     return cost;
   }
   CostOrError costOfStateChange([[maybe_unused]] StateQuery const &query) override {
-    return INTERNAL_ERROR;
+    return unexpected<Error>{Error::INTERNAL_ERROR};
   }
   CostOrError costOfEnvTraversal([[maybe_unused]] StateQuery const &query) override {
-    return INTERNAL_ERROR;
-  }
-  CostOrError costOfTerrain(StateQuery const &query) override {
     auto loc_from = query.from.loc();
     auto env_from = env(static_cast<long>(loc_from.y()), (static_cast<long>(loc_from.x())));
     auto loc_to   = query.to.loc();
     auto env_to   = env(static_cast<long>(loc_to.y()), static_cast<long>(loc_to.x()));
-    return Cost(env_to - env_from); // random value
+    return Cost(env_to - env_from);
   }
+  CostOrError costOfTerrain(StateQuery const &query) override {
+    return unexpected<Error>{Error::INTERNAL_ERROR};
+    }
   [[nodiscard]] StateBounds bounds() const override {
     State min_state;
     min_state.setStateElement(0, 0);
@@ -102,7 +102,7 @@ struct SimplePlanner : IPlanner {
 
     AStarPath path;
     Waypoint start = {initial};
-    path.path.emplace_back(start);
+    path.emplace_back(start);
     path.f_score = target->heuristic(path);
     path.g_score = Cost(0);
     open_set.push(path);
@@ -127,11 +127,11 @@ struct SimplePlanner : IPlanner {
         neighbour.setLoc(current_state.loc() + i);
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
-          if (cost.value().getType() != Cost::UNKNOWN) {
+          if (cost.value().type() != Cost::UNKNOWN) {
             AStarPath new_path = current;
             Waypoint wp;
             wp.target = neighbour;
-            new_path.path.emplace_back(wp);
+            new_path.emplace_back(wp);
 
             new_path.g_score = new_path.g_score + cost.value();
             new_path.f_score = new_path.g_score;
@@ -158,8 +158,6 @@ struct SimplePlanner : IPlanner {
   }
 
 private:
-  std::weak_ptr<ICostProvider> cost_provider;
-
   std::priority_queue<AStarPath, std::vector<AStarPath>, AStarPathComparator> open_set;
   seconds_t time_limit = 1;
 };

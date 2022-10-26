@@ -9,7 +9,7 @@ namespace pathplanning {
  *
  */
 struct PointTarget : public ITargetCriteria {
-  PointTarget(Location target) : goal(target) {}
+  explicit PointTarget(Location target) : goal(target) {}
 
   Fitness fitness(Path const &path) const override {
     if (path.empty())
@@ -27,7 +27,7 @@ struct PointTarget : public ITargetCriteria {
 
   Cost heuristic(Path const &path) const override {
     if (path.empty())
-      return Cost::UNKNOWN;
+      return Cost(0, Cost::UNKNOWN);
     return Cost(agv_math::distanceBetween(path.back().target.loc(), goal));
   };
 

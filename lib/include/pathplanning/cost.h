@@ -14,8 +14,8 @@ struct Cost {
   // Math operators
   // Comparisons
 
-  Cost() {}
-  Cost(CostValue const &value) : value_(value) {}
+  Cost() = default;
+  explicit Cost(CostValue const &value) : value_(value) {}
   Cost(CostValue const &value, Classifier type) : type_(type), value_(value) {}
 
   Cost &operator+=(Cost const &other);
@@ -47,7 +47,7 @@ struct Cost {
     return out;
   }
 
-  Classifier getType() { return type_; }
+  Classifier type() const { return type_; }
 
 private:
   Classifier type_ = NORMAL;

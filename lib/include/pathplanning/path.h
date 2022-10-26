@@ -17,5 +17,6 @@ struct Path {
 
   bool empty() const { return path.empty(); };
   Waypoint back() const { return path.back(); };
+  void emplace_back(Waypoint wp) { path.emplace_back(wp); }
 };
 } // namespace pathplanning
