@@ -7,26 +7,47 @@
 #include <queue>
 using namespace pathplanning;
 
-struct SimpleCostProvider : ICostProvider {
+struct SimpleEnvironment {
   // task1
   // create and store environment costmap
   // clang-format off
   Eigen::MatrixXd env{
   {0, 0, 0, 0, 0, 0}, 
-  {0, 1, 0, 1, 0, 1}, 
-  {0, 1, 0, 0, 1, 0},
-  {0, 0, 0, 0, 0, 0}, 
+  {0, 1, 1, 1, 0, 1}, 
+  {1, 1, 0, 2, 1, 0},
+  {0, 0, 0, 0, 2, 2}, 
   {1, 0, 1, 0, 1, 0}, 
-  {1, 1, 0, 0, 0, 0}};
+  {1, 1, 0, 3, 0, 0}};
   // clang-format on
 
-  CostOrError costBetween(StateQuery const &query) override {
-    // std::cout << query << "\n";
-    if (isOutOfBounds(query)) {
-      // std::cout << "Out of bounds\n";
-      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
-    }
+  enum Error { OUT_OF_BOUNDS };
+  using RealOrError = expected<Real, Error>;
 
+  RealOrError getValue(Vec2 loc) {
+    auto x_ = static_cast<Eigen::Index>(loc.x());
+    auto y_ = static_cast<Eigen::Index>(loc.y());
+
+    if (isOutOfBounds(x_, y_)) {
+      return OUT_OF_BOUNDS;
+    } else {
+      return env(y_, x_);
+    }
+  };
+
+  bool isOutOfBounds(Eigen::Index x, Eigen::Index y) {
+    if (x < 0 || x > env.cols() - 1) {
+      return true;
+    }
+    if (y < 0 || y > env.rows() - 1) {
+      return true;
+    }
+    return false;
+  };
+};
+
+struct SimpleCostProvider : ICostProvider {
+
+  CostOrError costBetween(StateQuery const &query) override {
     CostOrError cost = costOfEnvTraversal(query);
     return cost;
   }
@@ -34,29 +55,18 @@ struct SimpleCostProvider : ICostProvider {
     return unexpected<Error>{Error::INTERNAL_ERROR};
   }
   CostOrError costOfEnvTraversal([[maybe_unused]] StateQuery const &query) override {
-    auto loc_from = query.from.loc();
-    auto env_from = env(static_cast<long>(loc_from.y()), (static_cast<long>(loc_from.x())));
-    auto loc_to   = query.to.loc();
-    auto env_to   = env(static_cast<long>(loc_to.y()), static_cast<long>(loc_to.x()));
-    return Cost(env_to - env_from);
+    auto env_from = env.getValue(query.from.loc());
+    auto env_to   = env.getValue(query.to.loc());
+    if (!env_from.has_value() || !env_to.has_value()) {
+      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
+    } else {
+      return Cost(env_to.value() - env_from.value());
+    }
   }
   CostOrError costOfTerrain(StateQuery const &query) override {
     return unexpected<Error>{Error::INTERNAL_ERROR};
-    }
-  [[nodiscard]] StateBounds bounds() const override {
-    State min_state;
-    min_state.setStateElement(0, 0);
-    min_state.setStateElement(0, 1);
-    State max_state;
-    max_state.setStateElement(5, 0);
-    max_state.setStateElement(5, 1);
-    return {min_state, max_state};
   }
-
-  bool isOutOfBounds(StateQuery const &query) const {
-    auto state_bounds = bounds();
-    return (query.to > state_bounds.max() || query.to < state_bounds.min());
-  }
+  [[nodiscard]] StateBounds bounds() const override { return {}; }
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 
@@ -73,6 +83,7 @@ struct SimpleCostProvider : ICostProvider {
 
   //   return neighbours;
   // }
+  SimpleEnvironment env;
 };
 
 struct AStarPath : Path {
@@ -90,7 +101,9 @@ struct AStarPath : Path {
 
 class AStarPathComparator {
 public:
-  int operator()(const AStarPath &p1, const AStarPath &p2) const { return p1.f_score > p2.f_score; }
+  bool operator()(const AStarPath &p1, const AStarPath &p2) const {
+    return p1.f_score > p2.f_score;
+  }
 };
 
 struct SimplePlanner : IPlanner {
@@ -109,6 +122,8 @@ struct SimplePlanner : IPlanner {
     while (!open_set.empty()) {
       // Choose path with lowest f score
       auto current = open_set.top();
+      std::cout << current.f_score << "\n";
+
       open_set.pop();
       // Check time limit
       if (sw.elapsed().count() > time_limit) {
@@ -128,6 +143,7 @@ struct SimplePlanner : IPlanner {
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
           if (cost.value().type() != Cost::UNKNOWN) {
+            std::cout << "Loc: " << neighbour.loc().transpose() << "\n";
             AStarPath new_path = current;
             Waypoint wp;
             wp.target = neighbour;
@@ -212,7 +228,7 @@ int main() {
   // task 3
   // output path and costmap to something
   // Make a boolean map marking the points which path visits
-  auto map = cost_provider->env;
+  auto map = cost_provider->env.env;
 
   Eigen::MatrixXi path_map(2, 2);
   path_map.resize(map.rows(), map.cols());
@@ -227,12 +243,13 @@ int main() {
 
     for (auto const &wp : path.value().path) {
       auto loc = wp.target.loc();
+      std::cout << loc.transpose() << "\n";
       path_map(static_cast<Eigen::Index>(loc.y()), static_cast<Eigen::Index>(loc.x())) = 1;
     }
 
     for (auto i = 0; i < map.rows(); i++) {
       for (auto j = 0; j < map.cols(); j++) {
-        if (path_map(i, j)) {
+        if (path_map(i, j) > 0) {
           std::cout << "\033[1;31m" << map(i, j) << "\033[0m";
         } else {
           std::cout << map(i, j);

@@ -24,3 +24,4 @@ TEST_CASE("arithmetic operations on cost", "[cost]") {
     REQUIRE(c3.type() == Cost::UNKNOWN);
   }
 }
+// TODO add overflow underflow tests

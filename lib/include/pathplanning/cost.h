@@ -3,8 +3,10 @@
 #include "internal/common.h"
 #include "state.h"
 #include "search_space.h"
+#include "magic_enum.hpp"
 
 namespace pathplanning {
+using namespace magic_enum::ostream_operators;
 struct Cost {
   using CostValue = Real;
   enum Classifier { UNKNOWN, FREE, NORMAL, IMPASSABLE };
@@ -43,7 +45,7 @@ struct Cost {
     return c;
   }
   friend std::ostream &operator<<(std::ostream &out, const Cost &c) {
-    out << "Cost:  " << c.value_ << "\n";
+    out << "Cost:  " << c.value_ << " " << c.type_ << "\n";
     return out;
   }
 

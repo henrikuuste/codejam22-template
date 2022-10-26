@@ -96,6 +96,7 @@ struct StateQuery {
 };
 
 struct StateBounds {
+  StateBounds() = default;
   StateBounds(State const &min, State const &max) : _min(min), _max(max){};
   StateBounds(State const &center, StateDifference const &halfSize);
   State const &min() const { return _min; }
