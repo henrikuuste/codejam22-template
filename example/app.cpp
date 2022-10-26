@@ -34,6 +34,8 @@ void draw_path(const Eigen::MatrixXf map, const Path path) {
   }
 }
 
+Eigen::MatrixXf import_from_csv() { std::cout << "To be implemented\n"; }
+
 // First row of the output csv will contain the coordinates of the waypoints making up the path
 // Next rows will contain the map
 void export_to_csv(const Eigen::MatrixXf map, const Path path) {
