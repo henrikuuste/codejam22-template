@@ -14,7 +14,7 @@ struct SimpleEnvironment {
   Eigen::MatrixXd env{
   {0, 0, 0, 0, 0, 0}, 
   {0, 1, 1, 1, 0, 1}, 
-  {1, 1, 0, 2, 1, 0},
+  {0, 1, 0, 2, 1, 0},
   {0, 0, 0, 0, 2, 2}, 
   {1, 0, 1, 0, 1, 0}, 
   {1, 1, 0, 3, 0, 0}};
@@ -28,7 +28,7 @@ struct SimpleEnvironment {
     auto y_ = static_cast<Eigen::Index>(loc.y());
 
     if (isOutOfBounds(x_, y_)) {
-      return OUT_OF_BOUNDS;
+      return unexpected<Error>{Error::OUT_OF_BOUNDS};
     } else {
       return env(y_, x_);
     }
@@ -57,10 +57,12 @@ struct SimpleCostProvider : ICostProvider {
   CostOrError costOfEnvTraversal([[maybe_unused]] StateQuery const &query) override {
     auto env_from = env.getValue(query.from.loc());
     auto env_to   = env.getValue(query.to.loc());
-    if (!env_from.has_value() || !env_to.has_value()) {
-      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
+    if (env_from.has_value() && env_to.has_value()) {
+      return Cost(abs(env_to.value() - env_from.value()));
+
     } else {
-      return Cost(env_to.value() - env_from.value());
+
+      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
     }
   }
   CostOrError costOfTerrain(StateQuery const &query) override {
@@ -91,7 +93,6 @@ struct AStarPath : Path {
   Cost g_score = Cost(std::numeric_limits<double>::max());
   bool operator>(const AStarPath &p) const { return (f_score > p.f_score); }
   bool operator<(const AStarPath &p) const { return (f_score < p.f_score); }
-
   // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
   //   std::vector<AStarPath> neighbours;
 
@@ -121,8 +122,8 @@ struct SimplePlanner : IPlanner {
     open_set.push(path);
     while (!open_set.empty()) {
       // Choose path with lowest f score
-      auto current = open_set.top();
-      std::cout << current.f_score << "\n";
+      AStarPath current = open_set.top();
+      // std::cout << "Current g score: " << current.g_score;
 
       open_set.pop();
       // Check time limit
@@ -143,16 +144,20 @@ struct SimplePlanner : IPlanner {
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
           if (cost.value().type() != Cost::UNKNOWN) {
-            std::cout << "Loc: " << neighbour.loc().transpose() << "\n";
+            // std::cout << "Loc: " << neighbour.loc().transpose() << "\n";
+            // std::cout << cost.value();
             AStarPath new_path = current;
             Waypoint wp;
             wp.target = neighbour;
             new_path.emplace_back(wp);
+            // std::cout << "Previous g_score: " << new_path.g_score;
+            new_path.g_score = new_path.g_score + cost.value() +
+                               agv_math::distanceBetween(current_state.loc(), neighbour.loc());
 
-            new_path.g_score = new_path.g_score + cost.value();
+            // std::cout << "New g_score: " << new_path.g_score;
             new_path.f_score = new_path.g_score;
             new_path.f_score = new_path.f_score + target->heuristic(new_path);
-
+            // std::cout << "New f_score: " << new_path.f_score << "\n";
             open_set.push(new_path);
           }
         }
@@ -243,7 +248,7 @@ int main() {
 
     for (auto const &wp : path.value().path) {
       auto loc = wp.target.loc();
-      std::cout << loc.transpose() << "\n";
+      // std::cout << loc.transpose() << "\n";
       path_map(static_cast<Eigen::Index>(loc.y()), static_cast<Eigen::Index>(loc.x())) = 1;
     }
 

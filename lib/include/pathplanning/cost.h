@@ -45,7 +45,7 @@ struct Cost {
     return c;
   }
   friend std::ostream &operator<<(std::ostream &out, const Cost &c) {
-    out << "Cost:  " << c.value_ << " " << c.type_ << "\n";
+    out << "Cost: " << c.value_ << " " << c.type_ << "\n";
     return out;
   }
 
