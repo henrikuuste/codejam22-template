@@ -57,53 +57,35 @@ void export_to_csv(const Eigen::MatrixXf map, const Path path) {
 }
 
 struct SimpleCostProvider : ICostProvider {
-  // task1
-  // create and store environment costmap
-  // clang-format off
-  Eigen::MatrixXf env{
-  {1, 9, 1, 1, 1, 1}, 
-  {1, 1, 1, 1, 1, 1}, 
-  {1, 9, 9, 9, 9, 1},
-  {1, 1, 1, 1, 1, 1}, 
-  {1, 9, 9, 9, 9, 9}, 
-  {1, 1, 1, 1, 1, 1}};
-  // clang-format on
-
   CostOrError costBetween(StateQuery const &query) override {
-    // std::cout << query << "\n";
-    if (isOutOfBounds(query)) {
-      // std::cout << "Out of bounds\n";
-      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
-    }
-
-    CostOrError cost = costOfTerrain(query);
+    CostOrError cost = costOfEnvTraversal(query);
     return cost;
   }
-  CostOrError costOfStateChange(StateQuery const &query) override { return INTERNAL_ERROR; }
-  CostOrError costOfEnvTraversal(StateQuery const &query) override { return INTERNAL_ERROR; }
-  CostOrError costOfTerrain(StateQuery const &query) override {
-    auto loc_from = query.from.loc();
-    auto env_from = env(static_cast<long>(loc_from.y()), (static_cast<long>(loc_from.x())));
-    auto loc_to   = query.to.loc();
-    auto env_to   = env(static_cast<long>(loc_to.y()), static_cast<long>(loc_to.x()));
-    return Cost(env_to - env_from); // random value
+  CostOrError costOfStateChange([[maybe_unused]] StateQuery const &query) override {
+    return unexpected<Error>{Error::INTERNAL_ERROR};
   }
-  [[nodiscard]] StateBounds bounds() const override {
-    State min_state;
-    min_state.setStateElement(0, 0);
-    min_state.setStateElement(0, 1);
-    State max_state;
-    max_state.setStateElement(5, 0);
-    max_state.setStateElement(5, 1);
-    return {min_state, max_state};
-  }
+  CostOrError costOfEnvTraversal([[maybe_unused]] StateQuery const &query) override {
+    auto env_from = env.getValue(query.from.loc());
+    auto env_to   = env.getValue(query.to.loc());
+    if (env_from.has_value() && env_to.has_value()) {
+      return Cost(abs(env_to.value() - env_from.value()));
+    } else {
 
+      return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
+    }
+  }
   [[nodiscard]] bool isOutOfBounds(StateQuery const &query) const {
     auto state_bounds = bounds();
     return (query.to > state_bounds.max() || query.to < state_bounds.min());
   }
+  CostOrError costOfTerrain(StateQuery const &query) override {
+    return unexpected<Error>{Error::INTERNAL_ERROR};
+  }
+  [[nodiscard]] StateBounds bounds() const override { return {}; }
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
+
+  SimpleEnvironment env;
 };
 
 struct AStarPath : Path {
@@ -125,7 +107,9 @@ struct AStarPath : Path {
 
 class AStarPathComparator {
 public:
-  int operator()(const AStarPath &p1, const AStarPath &p2) { return p1.f_score > p2.f_score; }
+  bool operator()(const AStarPath &p1, const AStarPath &p2) const {
+    return p1.f_score > p2.f_score;
+  }
 };
 
 struct SimplePlanner : IPlanner {
@@ -137,13 +121,15 @@ struct SimplePlanner : IPlanner {
 
     AStarPath path;
     Waypoint start = {initial};
-    path.path.emplace_back(start);
+    path.emplace_back(start);
     path.f_score = target->heuristic(path);
     path.g_score = Cost(0);
     open_set.push(path);
     while (!open_set.empty()) {
       // Choose path with lowest f score
-      auto current = open_set.top();
+      AStarPath current = open_set.top();
+      // std::cout << "Current g score: " << current.g_score;
+
       open_set.pop();
       // std::cout << "Current path:\n";
       // draw_path(provider->env, current);
@@ -154,7 +140,7 @@ struct SimplePlanner : IPlanner {
         return current;
       }
       // Check if goal
-      if (target->fitness(current)) {
+      if (target->satisfiesCriteria(current)) {
         return current;
       }
 
@@ -171,16 +157,21 @@ struct SimplePlanner : IPlanner {
         }
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
-          if (cost.value().getType() != Cost::UNKNOWN) {
+          if (cost.value().type() != Cost::UNKNOWN) {
+            // std::cout << "Loc: " << neighbour.loc().transpose() << "\n";
+            // std::cout << cost.value();
             AStarPath new_path = current;
             Waypoint wp;
             wp.target = neighbour;
-            new_path.path.emplace_back(wp);
+            new_path.emplace_back(wp);
+            // std::cout << "Previous g_score: " << new_path.g_score;
+            new_path.g_score = new_path.g_score + cost.value() +
+                               agv_math::distanceBetween(current_state.loc(), neighbour.loc());
 
-            new_path.g_score = new_path.g_score + cost.value();
+            // std::cout << "New g_score: " << new_path.g_score;
             new_path.f_score = new_path.g_score;
             new_path.f_score = new_path.f_score + target->heuristic(new_path);
-
+            // std::cout << "New f_score: " << new_path.f_score << "\n";
             open_set.push(new_path);
           }
         }
@@ -198,8 +189,6 @@ struct SimplePlanner : IPlanner {
   }
 
 private:
-  std::weak_ptr<ICostProvider> cost_provider;
-
   std::priority_queue<AStarPath, std::vector<AStarPath>, AStarPathComparator> open_set;
   seconds_t time_limit = 1;
 };
@@ -227,8 +216,8 @@ int main() {
 
   auto cost_provider = std::make_shared<SimpleCostProvider>();
 
-  // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state, goal_state});
-  // if (cost.has_value()) {
+  // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state,
+  // goal_state}); if (cost.has_value()) {
   //   std::cout << cost.value() << "\n";
   // } else {
   //   std::cout << "Sum Ding Wong"
@@ -254,7 +243,7 @@ int main() {
   // task 3
   // output path and costmap to something
   // Make a boolean map marking the points which path visits
-  auto map = cost_provider->env;
+  auto map = cost_provider->env.env;
 
   if (path.has_value()) {
     draw_path(map, path.value());

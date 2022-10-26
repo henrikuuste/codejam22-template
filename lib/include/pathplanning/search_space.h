@@ -7,5 +7,6 @@
 namespace pathplanning {
 struct SearchSpace {
   StateBounds bounds() const;
+  enum PARAM_TYPE { CONTINOUS, DISCRETE, BINARY };
 };
 } // namespace pathplanning

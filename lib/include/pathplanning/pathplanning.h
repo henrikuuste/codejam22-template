@@ -29,6 +29,8 @@ struct IPlanner {
   virtual IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider)  = 0;
   virtual IPlanner *setTimeLimit(seconds_t limit)                           = 0;
   // virtual PlannerDiagnostics getDiagnostics()                               = 0;
+protected:
+  std::weak_ptr<ICostProvider> cost_provider;
 };
 
 } // namespace pathplanning

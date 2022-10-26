@@ -10,7 +10,7 @@
 namespace pathplanning {
 
 struct ITargetCriteria {
-  using Fitness              = bool; // TODO should this be == Cost?
+  using Fitness              = float; // TODO should this be == Cost?
   virtual ~ITargetCriteria() = default;
 
   /**
@@ -39,7 +39,7 @@ struct ITargetCriteria {
    * @param path The current path from the search algorithm
    * @return Cost Heuristic value as a cost that can be compared
    */
-  virtual Cost heuristic(Path const &path) const { return {}; };
+  virtual Cost heuristic(Path const &path) const = 0;
 };
 
 using TargetList = std::vector<std::unique_ptr<ITargetCriteria>>;

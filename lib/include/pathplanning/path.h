@@ -18,6 +18,8 @@ struct Path {
   bool empty() const { return path.empty(); };
   Waypoint back() const { return path.back(); };
 
-  // Add function for checking if waypoint on path 
+  // Add function for checking if waypoint on path
+
+  void emplace_back(Waypoint wp) { path.emplace_back(wp); }
 };
 } // namespace pathplanning
