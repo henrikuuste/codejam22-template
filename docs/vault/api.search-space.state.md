@@ -9,6 +9,17 @@ created: 1650545807481
 What is state? How is it specified?
 
 ## Requirements and use cases
+- Must include all relevant non-static parameters
+  - Location
+  - Linear/angular velocity
+  - Orientation
+  - Payload/generator state
+  - Battery level
+- State space >= search space
+- State parameters must be individually accessible
+- Must be able to configure which state parameters shall be used
+  - User is notified if a non-configured parameter is accessed
+- Must be able to get difference between two states
 
 ## Design options
 #### Just a struct
