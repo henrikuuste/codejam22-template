@@ -8,7 +8,7 @@
 #include <spdlog/stopwatch.h>
 using namespace pathplanning;
 
-void draw_path(const Eigen::MatrixXf map, const Path path) {
+void draw_path(const Eigen::MatrixXd &map, const Path &path) {
   // Create a binary matrix showing where the path is
   Eigen::MatrixXi path_map(2, 2);
   path_map.resize(map.rows(), map.cols());
@@ -18,8 +18,8 @@ void draw_path(const Eigen::MatrixXf map, const Path path) {
     }
   }
   for (auto const &wp : path.path) {
-    auto loc                                                             = wp.target.loc();
-    path_map(static_cast<size_t>(loc.y()), static_cast<size_t>(loc.x())) = 1;
+    auto loc = wp.target.loc();
+    path_map(static_cast<Eigen::Index>(loc.y()), static_cast<Eigen::Index>(loc.x())) = 1;
   }
   for (long i = 0; i < map.rows(); i++) {
     for (long j = 0; j < map.cols(); j++) {
@@ -34,11 +34,11 @@ void draw_path(const Eigen::MatrixXf map, const Path path) {
   }
 }
 
-Eigen::MatrixXf import_from_csv() { std::cout << "To be implemented\n"; }
+Eigen::MatrixXd import_from_csv() { std::cout << "To be implemented\n"; }
 
 // First row of the output csv will contain the coordinates of the waypoints making up the path
 // Next rows will contain the map
-void export_to_csv(const Eigen::MatrixXf map, const Path path) {
+void export_to_csv(const Eigen::MatrixXd &map, const Path &path) {
   std::cout << "Exporting\n";
   std::ofstream f;
   f.open("output.csv");
@@ -55,8 +55,46 @@ void export_to_csv(const Eigen::MatrixXf map, const Path path) {
     f << "\n";
   }
 }
+struct SimpleEnvironment {
+  // task1
+  // create and store environment costmap
+  // clang-format off
+  Eigen::MatrixXd env{
+  {1, 1, 1, 1, 1, 1}, 
+  {1, 1, 1, 1, 1, 1}, 
+  {1, 1, 1, 2, 1, 1},
+  {1, 1, 1, 1, 2, 2}, 
+  {1, 1, 1, 1, 1, 1}, 
+  {1, 1, 1, 3, 1, 1}};
+  // clang-format on
+
+  enum Error { OUT_OF_BOUNDS };
+  using RealOrError = expected<Real, Error>;
+
+  RealOrError getValue(Vec2 loc) {
+    auto x_ = static_cast<Eigen::Index>(loc.x());
+    auto y_ = static_cast<Eigen::Index>(loc.y());
+
+    if (isOutOfBounds(x_, y_)) {
+      return unexpected<Error>{Error::OUT_OF_BOUNDS};
+    } else {
+      return env(y_, x_);
+    }
+  };
+
+  bool isOutOfBounds(Eigen::Index x, Eigen::Index y) {
+    if (x < 0 || x > env.cols() - 1) {
+      return true;
+    }
+    if (y < 0 || y > env.rows() - 1) {
+      return true;
+    }
+    return false;
+  };
+};
 
 struct SimpleCostProvider : ICostProvider {
+
   CostOrError costBetween(StateQuery const &query) override {
     CostOrError cost = costOfEnvTraversal(query);
     return cost;
@@ -69,14 +107,11 @@ struct SimpleCostProvider : ICostProvider {
     auto env_to   = env.getValue(query.to.loc());
     if (env_from.has_value() && env_to.has_value()) {
       return Cost(abs(env_to.value() - env_from.value()));
+
     } else {
 
       return Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN);
     }
-  }
-  [[nodiscard]] bool isOutOfBounds(StateQuery const &query) const {
-    auto state_bounds = bounds();
-    return (query.to > state_bounds.max() || query.to < state_bounds.min());
   }
   CostOrError costOfTerrain(StateQuery const &query) override {
     return unexpected<Error>{Error::INTERNAL_ERROR};
@@ -85,24 +120,32 @@ struct SimpleCostProvider : ICostProvider {
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 
+  // std::vector<State> get_neighbours(State current) {
+  //   std::vector<State> neighbours;
+  //   std::vector<Vec2> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
+
+  //   for (auto const &i : movement) {
+  //     State neighbour;
+  //     neighbour.setLoc(current.loc() + i);
+  //     if
+  //       neighbours.emplace_back(neighbour);
+  //   }
+
+  //   return neighbours;
+  // }
   SimpleEnvironment env;
 };
 
 struct AStarPath : Path {
   Cost f_score = Cost(std::numeric_limits<double>::max());
   Cost g_score = Cost(std::numeric_limits<double>::max());
-  bool const operator>(const AStarPath &p) { return (f_score > p.f_score); }
-  bool const operator<(const AStarPath &p) { return (f_score < p.f_score); }
+  bool operator>(const AStarPath &p) const { return (f_score > p.f_score); }
+  bool operator<(const AStarPath &p) const { return (f_score < p.f_score); }
+  // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
+  //   std::vector<AStarPath> neighbours;
 
-  bool is_point_on_path(State point) { // Maybe waypoint better?
-    // Reverse loop for efficiency
-    for (auto wp = path.rbegin(); wp != path.rend(); ++wp) {
-      if (wp->target.loc()[0] == point.loc()[0] && wp->target.loc()[1] == point.loc()[1]) {
-        return true;
-      }
-    }
-    return false;
-  }
+  //   return neighbours;
+  // }
 };
 
 class AStarPathComparator {
@@ -131,12 +174,8 @@ struct SimplePlanner : IPlanner {
       // std::cout << "Current g score: " << current.g_score;
 
       open_set.pop();
-      // std::cout << "Current path:\n";
-      // draw_path(provider->env, current);
-      // std::cout << std::endl;
       // Check time limit
       if (sw.elapsed().count() > time_limit) {
-        std::cout << "Time limit reached" << std::endl;
         return current;
       }
       // Check if goal
@@ -145,16 +184,11 @@ struct SimplePlanner : IPlanner {
       }
 
       // TODO break this into pieces
-      const std::array<Vec2, 4> movement{Vec2(-1, 0), Vec2(0, -1), Vec2(1, 0), Vec2(0, 1)};
+      const std::array<Vec2, 4> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
       State current_state = current.back().target;
-      auto loc            = current_state.getState();
       for (auto const &i : movement) {
         State neighbour;
         neighbour.setLoc(current_state.loc() + i);
-        // Checking whether point already exists in path
-        if (current.is_point_on_path(neighbour)) {
-          continue;
-        }
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
           if (cost.value().type() != Cost::UNKNOWN) {
@@ -177,6 +211,10 @@ struct SimplePlanner : IPlanner {
         }
       }
     }
+    // for (auto const &target : targets) {
+    //   // std::cout << target->heuristic(path);
+    // }
+
     return unexpected<Error>{Error::INTERNAL_ERROR};
   }
   IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) override {
@@ -216,8 +254,8 @@ int main() {
 
   auto cost_provider = std::make_shared<SimpleCostProvider>();
 
-  // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state,
-  // goal_state}); if (cost.has_value()) {
+  // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state, goal_state});
+  // if (cost.has_value()) {
   //   std::cout << cost.value() << "\n";
   // } else {
   //   std::cout << "Sum Ding Wong"
@@ -229,7 +267,7 @@ int main() {
   // make planner plan from initial state to goal state
   // planner.plan(costProvider, initialState, targetState)
   SimplePlanner planner;
-  planner.setTimeLimit(100);
+  planner.setTimeLimit(5);
   planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
   TargetList targets;
   Vec2 target_loc(5, 5);
@@ -244,7 +282,6 @@ int main() {
   // output path and costmap to something
   // Make a boolean map marking the points which path visits
   auto map = cost_provider->env.env;
-
   if (path.has_value()) {
     draw_path(map, path.value());
     export_to_csv(map, path.value());
