@@ -12,9 +12,9 @@ struct SimpleEnvironment {
   // create and store environment costmap
   // clang-format off
   Eigen::MatrixXd env{
-  {0, 0, 0, 0, 0, 0}, 
-  {0, 1, 1, 1, 0, 1}, 
-  {0, 1, 0, 2, 1, 0},
+  {0, 4, 0, 3, 0, 0}, 
+  {2, 1, 1, 1, 0, 1}, 
+  {4, 1, 0, 2, 1, 0},
   {0, 0, 0, 0, 2, 2}, 
   {1, 0, 1, 0, 1, 0}, 
   {1, 1, 0, 3, 0, 0}};
@@ -72,19 +72,6 @@ struct SimpleCostProvider : ICostProvider {
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 
-  // std::vector<State> get_neighbours(State current) {
-  //   std::vector<State> neighbours;
-  //   std::vector<Vec2> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
-
-  //   for (auto const &i : movement) {
-  //     State neighbour;
-  //     neighbour.setLoc(current.loc() + i);
-  //     if
-  //       neighbours.emplace_back(neighbour);
-  //   }
-
-  //   return neighbours;
-  // }
   SimpleEnvironment env;
 };
 
@@ -93,11 +80,6 @@ struct AStarPath : Path {
   Cost g_score = Cost(std::numeric_limits<double>::max());
   bool operator>(const AStarPath &p) const { return (f_score > p.f_score); }
   bool operator<(const AStarPath &p) const { return (f_score < p.f_score); }
-  // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
-  //   std::vector<AStarPath> neighbours;
-
-  //   return neighbours;
-  // }
 };
 
 class AStarPathComparator {
@@ -140,7 +122,7 @@ struct SimplePlanner : IPlanner {
       State current_state = current.back().target;
       for (auto const &i : movement) {
         State neighbour;
-        neighbour.setLoc(current_state.loc() + i);
+        neighbour.loc(current_state.loc() + i);
         auto cost = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost.has_value()) {
           if (cost.value().type() != Cost::UNKNOWN) {
@@ -196,12 +178,12 @@ int main() {
   // define initial vehicle state
   // define goal state
   State initial_state;
-  initial_state.setStateElement(0, 0);
-  initial_state.setStateElement(0, 1);
+
+  initial_state.loc(Location(0, 0));
+
   // std::cout << initial_state.getState() << "\n";
   State goal_state;
-  goal_state.setStateElement(5, 0);
-  goal_state.setStateElement(5, 1);
+  goal_state.loc(Location(5, 5));
   // std::cout << goal_state.getState() << "\n";
 
   auto cost_provider = std::make_shared<SimpleCostProvider>();
