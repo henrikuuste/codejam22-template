@@ -9,10 +9,11 @@ created: 1651289311429
 Output of the path planner.
 
 ## Requirements and use cases
-* 
-
+- The path is used to generate the set of controls for the UGV to execute desired motions
+- 
 ## Design options
-#### Option 1
+#### List of states
+
 ```cpp
 
 ```

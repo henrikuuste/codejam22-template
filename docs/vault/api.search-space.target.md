@@ -9,6 +9,14 @@ created: 1650545831231
 How do we specify target criteria?
 
 ## Requirements and use cases
+- Target is a set of constant parameters that are within search space
+  - Target might not be hard constrained
+    - User shall be able to define target criteria looseness
+- User wants to know how close is the path to target (this might not belong here)
+  - fitness
+  - heuristic
+- User wants to know if target criteria is met
+
 
 ## Design options
 #### Just state
