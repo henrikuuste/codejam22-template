@@ -35,16 +35,35 @@ void draw_path(const Eigen::MatrixXd &map, const Path &path) {
   }
 }
 
-Eigen::MatrixXd import_from_csv() {
+struct ImportedData {
+  Eigen::MatrixXd cost_map;
+  Vec2 start;
+  Vec2 finish;
+};
+
+ImportedData import_from_csv() {
   std::cout << "Importing\n";
+  ImportedData data;
   Eigen::MatrixXd map;
   std::ifstream f;
   std::string line, cell;
+  std::vector<Eigen::Index> ends;
   Eigen::Index x = 0;
   Eigen::Index y = 0;
 
   f.open("input.csv");
   if (f.is_open()) {
+    // Start and finish
+    for (int i = 0; i < 4; i++) {
+      if (i == 3) {
+        getline(f, line);
+      } else {
+        getline(f, line, ',');
+      }
+      ends.emplace_back(std::stoi(line));
+      line.clear();
+    }
+    // Mapsize
     getline(f, line, ',');
     x = std::stoi(line);
     line.clear();
@@ -54,6 +73,7 @@ Eigen::MatrixXd import_from_csv() {
     map.resize(y, x);
     x = 0;
     y = 0;
+    // Cost
     while (getline(f, line)) {
       std::stringstream ss(line);
       while (getline(ss, cell, ',')) {
@@ -68,7 +88,10 @@ Eigen::MatrixXd import_from_csv() {
     std::cout << "Sum Ding Wong: no file"
               << "\n";
   }
-  return map;
+  data.cost_map = map;
+  data.start    = Vec2(ends[0], ends[1]);
+  data.finish   = Vec2(ends[2], ends[3]);
+  return data;
 }
 
 // First row of the output csv will contain the coordinates of the waypoints making up the path
@@ -297,12 +320,13 @@ int main() {
   // define goal state
   auto cost_provider = std::make_shared<SimpleCostProvider>();
   SimpleEnvironment simple_env;
-  simple_env.env     = import_from_csv();
-  cost_provider->env = simple_env;
+  ImportedData imported_data = import_from_csv();
+  simple_env.env             = imported_data.cost_map;
+  cost_provider->env         = simple_env;
 
   State initial_state;
-  initial_state.setStateElement(0, 0);
-  initial_state.setStateElement(0, 1);
+  initial_state.setStateElement(imported_data.start[0], 0);
+  initial_state.setStateElement(imported_data.start[1], 1);
   // std::cout << initial_state.getState() << "\n";
 
   // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state,
@@ -321,8 +345,7 @@ int main() {
   planner.setTimeLimit(20);
   planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
   TargetList targets;
-  Vec2 target_loc(simple_env.env.cols(), simple_env.env.rows());
-  // target_loc << 5, 5;
+  Vec2 target_loc(imported_data.finish[0], imported_data.finish[1]);
   PointTarget point_target(target_loc);
   State::Distance allowed_error;
   allowed_error.loc_distance = Vec2(0.5, 0.5);
