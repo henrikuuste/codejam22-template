@@ -18,3 +18,36 @@ How do we specify vehicle model/contraints?
     - inertia tensor?
 
 ## Design options
+
+
+```cpp
+struct Payload {
+    VehicleGeometricProperties deployed_payload_geometry;
+    bool deployed;
+    // payload might have its own state
+};
+
+struct VehicleGeometricProperties {
+    Real height;
+    Real width;
+    Real lenght;
+};
+
+struct VehicleKinematicProperties {};
+struct VehicleDynamicProperties {
+    Real mass;
+}
+
+struct Vehicle {
+    vector<Payload> payloads;
+    void setPayloads();
+
+    VehicleGeometricProperties geometry;
+};
+
+
+Vehicle vehicle;
+vehicle.setPayloads()
+vehice.payloads[MANIPULATOR]
+
+```
