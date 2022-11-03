@@ -2,7 +2,8 @@ Study materials:
 https://motion.cs.illinois.edu/RoboticSystems/
 
  Questions:
-
+1. (Mainly about semantics and how to interpret the output of the planner)  
+Classically, path refers to a set of positions in which the robot should be while exectuting the motion. It does not tell anything about how it should be traversed (what are the velocities, orientations, other state parameters such as generator etc). Furthermore, classically the path is used to generate the trajectory which is given to the controllers as a target. Trajectory adds the "how the path is traversed part" (classically velocity profile), given kinematic constraints, and is continuous. Clearly this simplistic definition of a path does not satisfy our needs. If the trajectory is generated from a path, then it's not possible for the trajectory generator to know if the user wanted the robot to traverse some part of the path with some given velocity. Or, if it had to turn the generator on at some point. How should we think about a path? Is it still a path, but with extras that we should be using? Can we generate trajectories from those "paths with extras"? Would those still be called trajectories? Should we use some other term instead of a path (what term)? Is it something else rather than a path that our planner should output? Should we rename our planner from "path planner" to something else? 
 
 Terminology horror:
 

@@ -10,14 +10,15 @@ Output of the path planner.
 
 ## Requirements and use cases
 - The path is used to generate the trajectory
-- The path must consist of a set of positions
-- The path must include state parameters that can't be derived from geometric properties
-    - generator state
-    - payload state
-    - sensor states (if something needs to be turned on/off)
-    - lights
+- The path has to have position information in it
+- The path must include necessary state parameters that can't be derived from geometric properties
+  - generator state
+  - payload state
+  - sensor states (if something needs to be turned on/off)
+  - lights
 
-- 
+- The path might be invalid if it's not traversed between some velocity limits
+  - The path shall include conditions in which it is viable.
 ## Design options
 #### List of waypoints
 
@@ -25,7 +26,7 @@ Output of the path planner.
 
 
 struct Waypoint {
-    Location location;
+  Location location;
 
 };
 ```
