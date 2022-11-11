@@ -33,13 +33,15 @@ struct State {
   Vec<7> vec() const;
 };
 
+// wtf?
 struct CostState : public State {
-  bool payload;
+  bool payload; // let's say it's outside of the scope for v1 and hackathon
 };
 
 struct StateControl {
   // TODO
 };
+// end wtf?
 ```
 
 #### Vectors
@@ -51,7 +53,6 @@ struct State {
   AngularSpeed angular_speed() const;
 
   Vec<7> vec() const;
-
 private:
   Vec<7> data_;
 };
