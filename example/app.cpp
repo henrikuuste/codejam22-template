@@ -265,12 +265,12 @@ struct SimplePlanner : IPlanner {
       }
 
       // Find neighbours
-      const std::array<Vec2, 4> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
+      const std::array<Vec2, 8> movement{Vec2(1, 0), Vec2(0, 1),  Vec2(-1, 0),  Vec2(0, -1),
+                                         Vec2(1, 1), Vec2(-1, 1), Vec2(-1, -1), Vec2(1, -1)};
       State current_state = current.back();
       for (auto const &i : movement) {
         State neighbour;
         neighbour.setLoc(current_state.loc() + i);
-        auto cost_to_neigbour = provider->costBetween(StateQuery(current_state, neighbour));
         // std::cout << "Neighbour: " << neighbour.loc().y() << " " << neighbour.loc().x() <<
         // std::endl;
 
@@ -284,6 +284,7 @@ struct SimplePlanner : IPlanner {
           continue;
         }
 
+        auto cost_to_neigbour = provider->costBetween(StateQuery(current_state, neighbour));
         if (cost_to_neigbour.has_value()) {
           // std::cout << "Cost has value\n";
           if (cost_to_neigbour.value().type() != Cost::UNKNOWN) {
@@ -294,7 +295,6 @@ struct SimplePlanner : IPlanner {
             new_path.emplace_back(neighbour);
             new_path.g_score = new_path.g_score + cost_to_neigbour.value() +
                                agv_math::distanceBetween(current_state.loc(), neighbour.loc());
-
             new_path.f_score = new_path.g_score + target->heuristic(new_path);
 
             // New point reached
