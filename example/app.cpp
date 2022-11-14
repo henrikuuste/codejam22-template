@@ -19,7 +19,7 @@ void draw_path(const Eigen::MatrixXd &map, const Path &path) {
     }
   }
   for (auto const &wp : path.path) {
-    auto loc = wp.target.loc();
+    auto loc                                                                         = wp.loc();
     path_map(static_cast<Eigen::Index>(loc.y()), static_cast<Eigen::Index>(loc.x())) = 1;
   }
   for (long i = 0; i < map.rows(); i++) {
@@ -91,6 +91,7 @@ ImportedData import_from_csv() {
   data.cost_map = map;
   data.start    = Vec2(ends[0], ends[1]);
   data.finish   = Vec2(ends[2], ends[3]);
+
   return data;
 }
 
@@ -102,7 +103,7 @@ void export_to_csv(const Eigen::MatrixXd &map, const Path &path) {
   f.open("output.csv");
 
   for (auto const &wp : path.path) {
-    auto loc = wp.target.loc();
+    auto loc = wp.loc();
     f << loc.x() << "-" << loc.y() << ",";
   }
   f << "\n";
@@ -113,9 +114,9 @@ void export_to_csv(const Eigen::MatrixXd &map, const Path &path) {
     f << "\n";
   }
 }
+
+// For creating and storing costmap within the example planner
 struct SimpleEnvironment {
-  // task1
-  // create and store environment costmap
   // clang-format off
   Eigen::MatrixXd env {
   {1, 1, 1, 1, 1, 1}, 
@@ -178,19 +179,6 @@ struct SimpleCostProvider : ICostProvider {
 
   [[nodiscard]] SearchSpace const &searchSpace() const override { return {}; }
 
-  // std::vector<State> get_neighbours(State current) {
-  //   std::vector<State> neighbours;
-  //   std::vector<Vec2> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
-
-  //   for (auto const &i : movement) {
-  //     State neighbour;
-  //     neighbour.setLoc(current.loc() + i);
-  //     if
-  //       neighbours.emplace_back(neighbour);
-  //   }
-
-  //   return neighbours;
-  // }
   SimpleEnvironment env;
 };
 
@@ -199,11 +187,15 @@ struct AStarPath : Path {
   Cost g_score = Cost(std::numeric_limits<double>::max());
   bool operator>(const AStarPath &p) const { return (f_score > p.f_score); }
   bool operator<(const AStarPath &p) const { return (f_score < p.f_score); }
-  // std::vector<AStarPath> getNeighbours(std::weak_ptr<ICostProvider> provider) {
-  //   std::vector<AStarPath> neighbours;
 
-  //   return neighbours;
-  // }
+  bool point_on_path(State point) {
+    for (State path_point : path) {
+      if (point == path_point) {
+        return true;
+      }
+    }
+    return false;
+  }
 };
 
 class AStarPathComparator {
@@ -215,86 +207,137 @@ public:
 
 struct SimplePlanner : IPlanner {
   SimplePlanner() = default;
+
   PathOrError plan(State const &initial, TargetList const &targets) override {
     std::cout << "Running planner\n";
     spdlog::stopwatch sw;
-    auto provider      = std::static_pointer_cast<SimpleCostProvider>(cost_provider.lock());
-    auto const &target = targets.at(0);
+    auto provider = std::static_pointer_cast<SimpleCostProvider>(cost_provider.lock());
 
+    // Currently uses a single target
+    auto const &target = targets.at(0);
+    // TODO is target within bounds?
+
+    // initialize current_g_costs
+    std::vector<std::vector<Cost>> current_g_costs;
+    for (size_t i = 0; i < provider->env.env.rows(); i++) {
+      std::vector<Cost> row;
+      for (size_t j = 0; j < provider->env.env.cols(); j++) {
+        row.emplace_back(Cost(std::numeric_limits<double>::max(), Cost::UNKNOWN));
+      }
+      current_g_costs.emplace_back(row);
+    }
+
+    // Initial path setup
+    if (provider->env.isOutOfBounds(initial.loc().x(), initial.loc().y())) {
+      std::cout << "Initial state out of bounds\n";
+      return unexpected<Error>{Error::OUT_OF_BOUNDS};
+    }
     AStarPath path;
-    Waypoint start = {initial};
+    State start = {initial};
     path.emplace_back(start);
-    path.f_score = target->heuristic(path);
-    path.g_score = Cost(0);
+    if (path.empty()) {
+      std::cout << "Sum Ding Wong: Path empty" << std::endl;
+      return unexpected<Error>{Error::INTERNAL_ERROR};
+    }
+    auto initial_cost                                     = Cost(0);
+    path.f_score                                          = target->heuristic(path);
+    path.g_score                                          = initial_cost;
+    current_g_costs[initial.loc().y()][initial.loc().x()] = initial_cost;
     open_set.push(path);
+
+    // A* loop
     while (!open_set.empty()) {
       // Choose path with lowest f score
       AStarPath current = open_set.top();
-      // std::cout << "Current g score: " << current.g_score;
-
       open_set.pop();
-      // Check time limit
-      if (sw.elapsed().count() > time_limit) {
-        std::cout << "Planner timeout, time: " << sw.elapsed().count() << " s" << std::endl;
-        return current;
-      }
+
       // Check if goal
       if (target->satisfiesCriteria(current)) {
         std::cout << "Planner finished, time: " << sw.elapsed().count() << " s" << std::endl;
         return current;
       }
 
-      // TODO break this into pieces
+      // Check time limit
+      if (sw.elapsed().count() > time_limit) {
+        std::cout << "Planner timeout, time: " << sw.elapsed().count() << " s" << std::endl;
+        std::cout << target << std::endl;
+        return current;
+      }
+
+      // Find neighbours
       const std::array<Vec2, 4> movement{Vec2(1, 0), Vec2(0, 1), Vec2(-1, 0), Vec2(0, -1)};
-      State current_state = current.back().target;
+      State current_state = current.back();
       for (auto const &i : movement) {
         State neighbour;
         neighbour.setLoc(current_state.loc() + i);
-        bool visited = false;
-        for (auto i : closed_set) {
-          if (i.loc() == neighbour.loc()) {
-            // std::cout << "Been here, done that\n";
-            visited = true;
-          }
-        }
-        if (visited) {
+        auto cost_to_neigbour = provider->costBetween(StateQuery(current_state, neighbour));
+        // std::cout << "Neighbour: " << neighbour.loc().y() << " " << neighbour.loc().x() <<
+        // std::endl;
+
+        // If neighbour already on path, continue
+        if (current.point_on_path(neighbour)) {
+          // std::cout << "Point on path\n";
           continue;
         }
-        auto cost = provider->costBetween(StateQuery(current_state, neighbour));
-        if (cost.has_value()) {
-          if (cost.value().type() != Cost::UNKNOWN) {
-            std::cout << "Loc: " << neighbour.loc().transpose() << "\n";
-            std::cout << cost.value();
+        // If out of bounds, continue
+        if (provider->env.isOutOfBounds(neighbour.loc().x(), neighbour.loc().y())) {
+          continue;
+        }
+
+        if (cost_to_neigbour.has_value()) {
+          // std::cout << "Cost has value\n";
+          if (cost_to_neigbour.value().type() != Cost::UNKNOWN) {
+            // std::cout << "Cost is not unknown\n";
+
+            // Generate new path
             AStarPath new_path = current;
-            Waypoint wp;
-            wp.target = neighbour;
-            new_path.emplace_back(wp);
-            std::cout << "Previous g_score: " << new_path.g_score;
-            new_path.g_score = new_path.g_score + cost.value() +
+            new_path.emplace_back(neighbour);
+            new_path.g_score = new_path.g_score + cost_to_neigbour.value() +
                                agv_math::distanceBetween(current_state.loc(), neighbour.loc());
 
-            std::cout << "New g_score: " << new_path.g_score;
-            new_path.f_score = new_path.g_score;
-            new_path.f_score = new_path.f_score + target->heuristic(new_path);
-            std::cout << "New f_score: " << new_path.f_score << "\n";
-            open_set.push(new_path);
+            new_path.f_score = new_path.g_score + target->heuristic(new_path);
+
+            // New point reached
+            if (current_g_costs[neighbour.loc().y()][neighbour.loc().x()].type() == Cost::UNKNOWN) {
+              // std::cout << "New point\n";
+              current_g_costs[neighbour.loc().y()][neighbour.loc().x()] = new_path.g_score;
+              current_g_costs[neighbour.loc().y()][neighbour.loc().x()] =
+                  Cost(new_path.g_score.value(), Cost::NORMAL);
+              open_set.push(new_path);
+              continue;
+            }
+            // Visited before, but new cost is lower
+            else if (new_path.g_score < current_g_costs[neighbour.loc().y()][neighbour.loc().x()]) {
+              // std::cout << "Old point, better\n";
+              current_g_costs[neighbour.loc().y()][neighbour.loc().x()] = new_path.g_score;
+              open_set.push(new_path);
+            }
+            // Visited before, new cost same or higher
+            else {
+              // std::cout << "Old point, worse\n";
+              continue;
+            }
           } else {
             std::cout << "Cost is unknown\n";
+            // std::cout << "Current location:\n" << current_state.loc() << std::endl;
           }
+        } else {
+          std::cout << "Planner error, no cost value, time: " << sw.elapsed().count() << " s"
+                    << std::endl;
+          return unexpected<Error>{Error::INTERNAL_ERROR};
         }
       }
       closed_set.emplace_back(current_state);
     }
-    // for (auto const &target : targets) {
-    //    // std::cout << target->heuristic(path);
-    //  }
     std::cout << "Planner error, time: " << sw.elapsed().count() << " s" << std::endl;
     return unexpected<Error>{Error::INTERNAL_ERROR};
-  }
+  } // end of plan
+
   IPlanner *setCostProvider(std::weak_ptr<ICostProvider> provider) override {
     cost_provider = provider;
     return this;
   }
+
   IPlanner *setTimeLimit(seconds_t limit) override {
     time_limit = limit;
     return this;
@@ -303,6 +346,7 @@ struct SimplePlanner : IPlanner {
 private:
   std::priority_queue<AStarPath, std::vector<AStarPath>, AStarPathComparator> open_set;
   std::vector<State> closed_set;
+  // Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic> current_costs;
   seconds_t time_limit = 1;
 };
 
@@ -314,36 +358,33 @@ int main() {
   spdlog::info("Planning library version {}", pathplanning::version());
   std::cout << "======================\n";
 
-  // task 1.5
-  // create cost provider using costmap
-  // define initial vehicle state
-  // define goal state
+  // Cost provider and data
   auto cost_provider = std::make_shared<SimpleCostProvider>();
   SimpleEnvironment simple_env;
   ImportedData imported_data = import_from_csv();
   simple_env.env             = imported_data.cost_map;
   cost_provider->env         = simple_env;
 
+  /*
+  std::cout << "Map: " << cost_provider->env.env.cols() << " " << cost_provider->env.env.rows()
+            << std::endl;
+
+  std::cout << "Start\n"
+            << imported_data.start << "\nFinish\n"
+            << imported_data.finish << std::endl;
+  */
+
+  // Planner
+  SimplePlanner planner;
+  planner.setTimeLimit(120);
+  planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
+
+  // Initial
   State initial_state;
   initial_state.setStateElement(imported_data.start[0], 0);
   initial_state.setStateElement(imported_data.start[1], 1);
-  // std::cout << initial_state.getState() << "\n";
 
-  // SimpleCostProvider::CostOrError cost = cost_provider->costBetween({initial_state,
-  // goal_state}); if (cost.has_value()) {
-  //   std::cout << cost.value() << "\n";
-  // } else {
-  //   std::cout << "Sum Ding Wong"
-  //             << "\n";
-  // }
-
-  // task 2 - integrate this
-  // create planner object
-  // make planner plan from initial state to goal state
-  // planner.plan(costProvider, initialState, targetState)
-  SimplePlanner planner;
-  planner.setTimeLimit(20);
-  planner.setCostProvider(std::weak_ptr<SimpleCostProvider>(cost_provider));
+  // Target(s)
   TargetList targets;
   Vec2 target_loc(imported_data.finish[0], imported_data.finish[1]);
   PointTarget point_target(target_loc);
@@ -351,22 +392,19 @@ int main() {
   allowed_error.loc_distance = Vec2(0.5, 0.5);
   point_target.setAllowedError(allowed_error);
   targets.emplace_back(std::make_unique<PointTarget>(point_target));
+
+  // Planner plans
   SimplePlanner::PathOrError path = planner.plan(initial_state, targets);
-  // task 3
-  // output path and costmap to something
-  // Make a boolean map marking the points which path visits
+
+  // Output path and costmap to something
   auto map = cost_provider->env.env;
   if (path.has_value()) {
-    // draw_path(map, path.value());
+    // draw_path(map, path.value()); // In terminal
     export_to_csv(map, path.value());
   } else {
     std::cout << "Sum Ding Wong: path has no value"
               << "\n";
   }
-
-  // task 4
   // when done, open up path in jupyter notebook
-  // visualise results to validate behaviour
-
   spdlog::warn("Done {}", sw);
 }

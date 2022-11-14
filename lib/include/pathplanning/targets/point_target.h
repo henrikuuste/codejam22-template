@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../target.h"
 #include "../math_utils.h"
+#include "../target.h"
 namespace pathplanning {
 
 /**
@@ -15,7 +15,7 @@ struct PointTarget : public ITargetCriteria {
     if (path.empty())
       return 0.f;
     // TODO think about this
-    Vec2 diff = (goal - path.back().target.loc()).cwiseAbs();
+    Vec2 diff = (goal - path.back().loc()).cwiseAbs();
     return (diff.x() <= allowed_error.loc_distance.x()) &&
            (diff.y() <= allowed_error.loc_distance.y());
   }
@@ -28,7 +28,7 @@ struct PointTarget : public ITargetCriteria {
   Cost heuristic(Path const &path) const override {
     if (path.empty())
       return Cost(0, Cost::UNKNOWN);
-    return Cost(agv_math::distanceBetween(path.back().target.loc(), goal));
+    return Cost(agv_math::distanceBetween(path.back().loc(), goal));
   };
 
   State::Distance allowed_error;
