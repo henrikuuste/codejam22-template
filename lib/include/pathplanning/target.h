@@ -40,6 +40,8 @@ struct ITargetCriteria {
    * @return Cost Heuristic value as a cost that can be compared
    */
   virtual Cost heuristic(Path const &path) const = 0;
+
+  // Target within bounds check?
 };
 
 using TargetList = std::vector<std::unique_ptr<ITargetCriteria>>;

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "internal/common.h"
-#include "state.h"
-#include "search_space.h"
 #include "magic_enum.hpp"
+#include "search_space.h"
+#include "state.h"
 
 namespace pathplanning {
 using namespace magic_enum::ostream_operators;
@@ -17,12 +17,12 @@ struct Cost {
   // Comparisons
 
   Cost() = default;
-  explicit Cost(CostValue const &value) : value_(value) {}
+  explicit Cost(CostValue const &value) : value_(value), type_(NORMAL) {}
   Cost(CostValue const &value, Classifier type) : type_(type), value_(value) {}
 
   Cost &operator+=(Cost const &other);
   Cost &operator+=(CostValue const &other);
-  // auto operator<=>(Cost const &other);
+  // Should these also take type_ into account?
   bool operator<(Cost const &other) const { return value_ < other.value_; }
   bool operator>(Cost const &other) const { return value_ > other.value_; }
   bool operator==(Cost const &other) const { return value_ == other.value_; }
@@ -50,6 +50,7 @@ struct Cost {
   }
 
   Classifier type() const { return type_; }
+  CostValue value() const { return value_; }
 
 private:
   Classifier type_ = NORMAL;

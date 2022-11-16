@@ -52,6 +52,18 @@ struct State {
   friend State operator-(State const &lhs, StateDifference const &rhs);
   friend StateDifference operator-(State const &lhs, State const &rhs);
 
+  // TODO how to override comparison? should we even override comparison?
+  // TODO this is stupid but needed for state bounds comparison
+  bool operator<(State const &other) const {
+    return loc().x() < other.loc().x() || loc().y() < other.loc().y();
+  }
+  bool operator>(State const &other) const {
+    return loc().x() > other.loc().x() || loc().y() > other.loc().y();
+  }
+  bool operator==(State const &other) const {
+    return loc().x() == other.loc().x() && loc().y() == other.loc().y();
+  }
+
   // TODO fix shitty getters and setters
   StateVector getState() const { return data_; }
 
