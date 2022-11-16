@@ -270,7 +270,7 @@ struct SimplePlanner : IPlanner {
       State current_state = current.back();
       for (auto const &i : movement) {
         State neighbour;
-        neighbour.setLoc(current_state.loc() + i);
+        neighbour.loc(current_state.loc() + i);
         // std::cout << "Neighbour: " << neighbour.loc().y() << " " << neighbour.loc().x() <<
         // std::endl;
 

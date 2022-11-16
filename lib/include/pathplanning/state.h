@@ -6,7 +6,7 @@ namespace pathplanning {
 
 using Location            = Vec2;
 using Elevation           = Real; // TODO use Vec<1> instead?
-using Orientation         = Real;
+using Orientation         = Vec3; // RPY
 using LinearSpeed         = Real;
 using AngularSpeed        = Real;
 using Acceleration        = Real;
@@ -19,7 +19,7 @@ struct StateDifference;
 struct State {
   // TODO coordinate system?
   enum StateField { LOCATION, ELEVATION, ORIENTATION, LIN_SPEED, ANG_SPEED };
-  static constexpr size_t StateDim = Location::RowsAtCompileTime + 4; // TODO think about this
+  static constexpr size_t StateDim = Location::RowsAtCompileTime + 6; // TODO think about this
 
   struct Distance {
     // TODO
@@ -34,8 +34,9 @@ struct State {
     return _loc;
   }
   // TODO direction
-  Elevation &elevation() const;
-  Orientation &orient() const; // just heading
+  Elevation elevation() const;
+  Orientation orient() const; // just heading
+  Real heading() const;
   LinearSpeed linear_speed;
   AngularSpeed angular_speed;
   TimePoint time;
@@ -65,7 +66,7 @@ struct State {
   // TODO fix shitty getters and setters
   StateVector getState() const { return data_; }
   void setStateElement(Real value, Index idx) { data_(idx) = value; }
-  void setLoc(Location loc) {
+  void loc(Location loc) {
     data_(0) = loc.x();
     data_(1) = loc.y();
   }

@@ -38,6 +38,9 @@ created: 1650273170571
   * Part of cost interface? #todo
 * Return multiple/alternate routes? #tbd
   * Equal cost use case
+* Return the conditions in which the path is viable
+  * "sense-plan-act" loop trigger
+* 
 
 ## Design options
 #### Stateless

@@ -14,12 +14,14 @@ struct IVehicle {
     Real lin_acc;
     Real ang_acc;
     Vec3 dimensions;
+    Vec2 orientation; // Roll and Pitch
   };
 
+  // TODO payload dimensions?
 
-  virtual Cost::CostValue energyCost(State const &from, State const &to) const = 0;
+  virtual Cost::CostValue energyCost(State const &from, State const &to) const        = 0;
   virtual Cost::CostValue costOfStateChange(State const &from, State const &to) const = 0;
   // TODO is the footprint actually needed?
-  //virtual Geometry footprint() const = 0;
+  // virtual Geometry footprint() const = 0;
 };
 } // namespace pathplanning
