@@ -31,7 +31,8 @@ Terminology horror:
         * Payload position
     * Control space - All possible states of controllable parameters.
         * The parameters of this space are directly used by the robot's controllers
-    * Search space - Set of parameters the search is conducted in.
+    * Sample space - A collection or a set of possible outcomes of a random experiment.
+    * Search space - Set of potential parameters the search is conducted in. Search space is a subset of the sample space.
       * In case of A*, getNeigbours function defines the search space dimensionality. 
     * Task space - Set of parameters that are relevant for the task.
         * Abstraction layer for the parameters that are directly involved in solving the given task.
