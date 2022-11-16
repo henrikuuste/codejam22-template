@@ -24,11 +24,11 @@ What is state? How is it specified?
 ## Design options
 #### Just a struct
 ```cpp
-struct State {
+struct State { // version 1 simplification
   Location loc; // 2D
-  Orientation orient; // just heading
-  LinearSpeed linear_speed;
-  AngularSpeed angular_speed;
+  Orientation orient; // orientation
+  LinearSpeed linear_speed; // lets not use for now
+  AngularSpeed angular_speed; // lets not use for now
 
   Vec<7> vec() const;
 };

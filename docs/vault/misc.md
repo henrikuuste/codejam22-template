@@ -107,3 +107,15 @@ References:
 2. https://robotics.stackexchange.com/questions/6683/what-is-the-difference-between-motion-planning-and-trajectory-generation#:~:text=Motion%20%2D%20The%20change%20of%20state,over%20a%20period%20of%20time.
 3. https://robotics.stackexchange.com/questions/8302/what-is-the-difference-between-path-planning-and-motion-planning#:~:text=Path%20planning%20is%20the%20process,follow%20the%20path%20you%20planned.
 4. https://arxiv.org/pdf/2206.07227.pdf
+
+
+Currently the repository if filled with ideas from a lot of different complexity levels. Some parts are written to satisfy the requirements of the final product, some of it are simplification for the sake of the hackathon. In the end it got a bit messy, because some parts of the advanced stuff is not required for implementing more simple examples and it just adds clutter and non-used code. At the same time the simple stuff is likely not usable in the final product and probably raises questions if someone reads it.
+Following is a proposal to start designing the planner in incremental steps, so that each step would not collide with the other ones.
+This also makes it more apparent what trade-offs need to be done if we increase the number of searchable parameters and increase the complexity of the system. 
+
+Planner development roadmap (study purpose):
+
+1. Design a planner that works with 2D positions
+  - Design an API that can be used to implement 2D planner
+  - Write tests
+  - Implementation to 

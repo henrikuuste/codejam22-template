@@ -6,7 +6,8 @@ namespace pathplanning {
 
 using Location            = Vec2;
 using Elevation           = Real; // TODO use Vec<1> instead?
-using Orientation         = Vec3; // RPY
+using Orientation         = Vec3;
+using Heading             = Real; // just heading for now
 using LinearSpeed         = Real;
 using AngularSpeed        = Real;
 using Acceleration        = Real;
@@ -18,9 +19,9 @@ struct StateDifference;
 // TODO defaults?
 struct State {
   // TODO coordinate system?
-  enum StateField { LOCATION, ELEVATION, ORIENTATION, LIN_SPEED, ANG_SPEED };
-  static constexpr size_t StateDim = Location::RowsAtCompileTime + 6; // TODO think about this
-
+  // enum StateField { LOCATION, ELEVATION, ORIENTATION, LIN_SPEED, ANG_SPEED };
+  // static constexpr size_t StateDim = Location::RowsAtCompileTime + 4; // TODO think about this
+  static constexpr size_t StateDim = 3; // for testing 2D + heading only
   struct Distance {
     // TODO
     Vec2 loc_distance;
@@ -29,20 +30,20 @@ struct State {
   using StateVector = Vec<StateDim>;
   // NOTE essentially moving towards IndexedVector from ukf++
   // Is this really necessary in this codebase to do state access really really fast
-  Location loc() const {
-    Location _loc = data_.head(2);
-    return _loc;
-  }
+
   // TODO direction
-  Elevation elevation() const;
-  Orientation orient() const; // just heading
-  Real heading() const;
-  LinearSpeed linear_speed;
-  AngularSpeed angular_speed;
-  TimePoint time;
-  Acceleration acceleration;
-  AngularAcceleration angular_acceleration;
-  Dimensions dimensions;
+
+  // Not using these to test 2D pos + heading
+
+  // Elevation elevation() const;
+  // Orientation orient() const; // just heading
+  // Real heading() const;
+  // LinearSpeed linear_speed;
+  // AngularSpeed angular_speed;
+  // TimePoint time;
+  // Acceleration acceleration;
+  // AngularAcceleration angular_acceleration;
+  // Dimensions dimensions;
 
   State &operator+=(StateDifference const &other);
   State &operator-=(StateDifference const &other);
@@ -53,11 +54,25 @@ struct State {
 
   // TODO fix shitty getters and setters
   StateVector getState() const { return data_; }
+
   void setStateElement(Real value, Index idx) { data_(idx) = value; }
+
+  Location loc() const {
+    Location _loc = data_.head(2);
+    return _loc;
+  }
+
   void loc(Location loc) {
     data_(0) = loc.x();
     data_(1) = loc.y();
   }
+
+  Heading heading() const {
+    Heading _heading = data_[-1];
+    return _heading;
+  }
+
+  void heading(Heading heading) { data_(2) = heading; }
 
 private:
   StateVector data_;
